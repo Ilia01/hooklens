@@ -1,0 +1,25 @@
+name: Feature Request
+description: Suggest a feature or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: Describe the pain point
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would the ideal solution look like?
+      placeholder: Describe how you'd want it to work
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you currently do instead?
+      placeholder: Your current workaround
+    validations:
+      required: false

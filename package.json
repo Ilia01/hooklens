@@ -1,0 +1,63 @@
+{
+  "name": "hooklens",
+  "version": "0.1.0",
+  "description": "Inspect, verify, and replay webhooks from your terminal",
+  "type": "module",
+  "bin": {
+    "hooklens": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/cli/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "webhook",
+    "debug",
+    "stripe",
+    "signature",
+    "replay",
+    "cli",
+    "developer-tools"
+  ],
+  "author": "Ilia Goginashvili",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ilia01/hooklens.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ilia01/hooklens/issues"
+  },
+  "homepage": "https://github.com/Ilia01/hooklens#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.4.0",
+    "commander": "^13.0.0"
+  }
+}
