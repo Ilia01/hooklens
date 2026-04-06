@@ -4,11 +4,13 @@
 
 **Inspect, verify, and replay webhooks from your terminal.**
 
-[![npm version](https://img.shields.io/npm/v/hooklens?color=cb3837&label=npm)](https://www.npmjs.com/package/hooklens)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/Ilia01/hooklens/actions/workflows/ci.yml/badge.svg)](https://github.com/Ilia01/hooklens/actions/workflows/ci.yml)
 
 </div>
+
+> [!WARNING]
+> HookLens is under active development and not yet published to npm. Star or watch the repo to get notified when the first release drops.
 
 ---
 
@@ -61,12 +63,16 @@ HookLens intercepts the request at the HTTP level using `node:http` directly, be
 
 ## Install
 
-```bash
-npm install -g hooklens
-```
-
 > [!NOTE]
-> Requires Node.js 18 or later.
+> Not on npm yet. For now, you can clone and build locally:
+
+```bash
+git clone https://github.com/Ilia01/hooklens.git
+cd hooklens
+npm install
+npm run build
+npm link
+```
 
 ## Commands
 
