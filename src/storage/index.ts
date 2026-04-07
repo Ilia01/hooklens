@@ -1,17 +1,17 @@
 import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
-import { eventRowSchema, type EventRow, type WebhookEvent } from '../types.js'
+import { eventRowSchema, webhookEventSchema, type EventRow, type WebhookEvent } from '../types.js'
 
 function rowToEvent(row: EventRow): WebhookEvent {
-  return {
+  return webhookEventSchema.parse({
     id: row.id,
     timestamp: row.timestamp,
     method: row.method,
     path: row.path,
     headers: JSON.parse(row.headers),
     body: row.body,
-  }
+  })
 }
 
 export function createStorage(dbPath: string) {
@@ -59,6 +59,9 @@ export function createStorage(dbPath: string) {
     },
 
     list(limit?: number): WebhookEvent[] {
+      if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
+        throw new Error(`Invalid limit: must be a positive integer, got ${limit}`)
+      }
       const raw = limit === undefined ? listAllStmt.all() : listLimitedStmt.all(limit)
       const rows = raw.map((r) => eventRowSchema.parse(r))
       return rows.map(rowToEvent)
