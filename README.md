@@ -16,7 +16,7 @@
 
 Every developer who's integrated Stripe, Paddle, or any webhook provider has hit the same wall: signature verification fails, the error says nothing useful, and you spend an hour staring at raw headers trying to figure out what went wrong.
 
-HookLens sits between the webhook provider and your local server. It captures the raw request, verifies the signature, and tells you *why* it failed -- not just "invalid signature" but the actual reason. Then it stores the event so you can replay it whenever you want.
+HookLens sits between the webhook provider and your local server. It captures the raw request, verifies the signature, and tells you _why_ it failed -- not just "invalid signature" but the actual reason. Then it stores the event so you can replay it whenever you want.
 
 ## How it works
 
@@ -53,18 +53,20 @@ Webhook providers (Stripe, Paddle, GitHub, etc.) sign every request using the ra
 
 HookLens intercepts the request at the HTTP level using `node:http` directly, before any framework touches the body. It verifies against the actual bytes that arrived over the wire, and when it fails, it tells you which of the 5 possible failure modes you hit:
 
-| Failure | What HookLens tells you |
-|---------|------------------------|
-| Missing header | `stripe-signature header not found. Is this actually from Stripe?` |
-| Wrong secret | `Signature mismatch. Check your webhook secret matches the Stripe dashboard.` |
-| Expired timestamp | `Timestamp is 47 minutes old. Event expired or your clock is drifting.` |
-| Body mutated | `Signature mismatch with correct secret. Body was likely parsed and re-serialized by your framework.` |
-| Malformed header | `stripe-signature header is malformed. Expected format: t=timestamp,v1=signature` |
+| Failure           | What HookLens tells you                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| Missing header    | `stripe-signature header not found. Is this actually from Stripe?`                                    |
+| Wrong secret      | `Signature mismatch. Check your webhook secret matches the Stripe dashboard.`                         |
+| Expired timestamp | `Timestamp is 47 minutes old. Event expired or your clock is drifting.`                               |
+| Body mutated      | `Signature mismatch with correct secret. Body was likely parsed and re-serialized by your framework.` |
+| Malformed header  | `stripe-signature header is malformed. Expected format: t=timestamp,v1=signature`                     |
 
 ## Install
 
 > [!NOTE]
-> Not on npm yet. For now, you can clone and build locally:
+> Not on npm yet. For now, you can clone and build locally.
+
+**Requires Node.js 24 or newer** (HookLens uses the built-in `node:sqlite` module).
 
 ```bash
 git clone https://github.com/Ilia01/hooklens.git
@@ -76,11 +78,11 @@ npm link
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `hooklens listen` | Start receiving webhooks |
-| `hooklens list` | Show stored events |
-| `hooklens replay <id>` | Resend a stored event |
+| Command                | Description              |
+| ---------------------- | ------------------------ |
+| `hooklens listen`      | Start receiving webhooks |
+| `hooklens list`        | Show stored events       |
+| `hooklens replay <id>` | Resend a stored event    |
 
 ### `hooklens listen`
 
@@ -88,12 +90,12 @@ npm link
 hooklens listen --port 4400 --verify stripe --secret whsec_xxx --forward-to http://localhost:3000/webhook
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-p, --port <port>` | `4400` | Port to listen on |
-| `--verify <provider>` | -- | Verify signatures (`stripe`) |
-| `--secret <secret>` | -- | Webhook signing secret |
-| `--forward-to <url>` | -- | Forward received webhooks to this URL |
+| Flag                  | Default | Description                           |
+| --------------------- | ------- | ------------------------------------- |
+| `-p, --port <port>`   | `4400`  | Port to listen on                     |
+| `--verify <provider>` | --      | Verify signatures (`stripe`)          |
+| `--secret <secret>`   | --      | Webhook signing secret                |
+| `--forward-to <url>`  | --      | Forward received webhooks to this URL |
 
 ### `hooklens list`
 
@@ -101,9 +103,9 @@ hooklens listen --port 4400 --verify stripe --secret whsec_xxx --forward-to http
 hooklens list --limit 10
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-n, --limit <count>` | `20` | Number of events to show |
+| Flag                  | Default | Description              |
+| --------------------- | ------- | ------------------------ |
+| `-n, --limit <count>` | `20`    | Number of events to show |
 
 ### `hooklens replay`
 
@@ -111,8 +113,8 @@ hooklens list --limit 10
 hooklens replay evt_abc123 --to http://localhost:3000/webhook
 ```
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Flag         | Default                         | Description                     |
+| ------------ | ------------------------------- | ------------------------------- |
 | `--to <url>` | `http://localhost:3000/webhook` | Target URL to send the event to |
 
 ## Supported providers
