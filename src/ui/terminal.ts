@@ -11,6 +11,7 @@ export interface ListenStartedInfo {
 export interface TerminalUI {
   printListenStarted(info: ListenStartedInfo): void
   printEventCaptured(event: WebhookEvent, result: VerificationResult | null): void
+  printEventList(events: WebhookEvent[]): void
   printListenStopped(): void
   printError(message: string): void
 }
@@ -50,6 +51,18 @@ export function createTerminal(
       }
 
       writeLine(stdout, `${summary} ${result.message}`)
+    },
+
+    printEventList(events) {
+      if (!events.length) {
+        writeLine(stdout, chalk.dim('No stored events.'))
+        return
+      }
+
+      for (const event of events) {
+        const row = `${chalk.dim(event.timestamp)} ${chalk.cyan(event.method)} ${chalk.bold(event.id)} ${event.path}`
+        writeLine(stdout, row)
+      }
     },
 
     printListenStopped() {

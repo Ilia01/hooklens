@@ -5,7 +5,8 @@ import * as serverModule from '../../src/server/index.js'
 import * as storageModule from '../../src/storage/index.js'
 import type { VerificationResult, WebhookEvent } from '../../src/types.js'
 import type { TerminalUI } from '../../src/ui/terminal.js'
-import { buildVerifier, defaultDbPath, runListen } from '../../src/cli/listen.js'
+import { buildVerifier, runListen } from '../../src/cli/listen.js'
+import { defaultDbPath } from '../../src/storage/index.js'
 
 interface FakeStorage {
   save: ReturnType<typeof vi.fn>
@@ -29,6 +30,7 @@ function fakeTerminal(): TerminalUI {
   return {
     printListenStarted: vi.fn(),
     printEventCaptured: vi.fn(),
+    printEventList: vi.fn(),
     printListenStopped: vi.fn(),
     printError: vi.fn(),
   }
