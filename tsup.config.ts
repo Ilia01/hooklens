@@ -8,6 +8,7 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   dts: true,
+  external: ['node:sqlite'],
   banner: {
     js: '#!/usr/bin/env node',
   },

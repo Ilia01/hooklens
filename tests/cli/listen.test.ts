@@ -1,5 +1,46 @@
-import { describe, expect, it } from 'vitest'
-import { buildVerifier } from '../../src/cli/listen.js'
+import { EventEmitter } from 'node:events'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { ServerOptions, Server } from '../../src/server/index.js'
+import * as serverModule from '../../src/server/index.js'
+import * as storageModule from '../../src/storage/index.js'
+import type { VerificationResult, WebhookEvent } from '../../src/types.js'
+import type { TerminalUI } from '../../src/ui/terminal.js'
+import { buildVerifier, defaultDbPath, runListen } from '../../src/cli/listen.js'
+
+interface FakeStorage {
+  save: ReturnType<typeof vi.fn>
+  load: ReturnType<typeof vi.fn>
+  list: ReturnType<typeof vi.fn>
+  clear: ReturnType<typeof vi.fn>
+  close: ReturnType<typeof vi.fn>
+}
+
+function fakeStorage(): FakeStorage {
+  return {
+    save: vi.fn(),
+    load: vi.fn(),
+    list: vi.fn(() => []),
+    clear: vi.fn(),
+    close: vi.fn(),
+  }
+}
+
+function fakeTerminal(): TerminalUI {
+  return {
+    printListenStarted: vi.fn(),
+    printEventCaptured: vi.fn(),
+    printListenStopped: vi.fn(),
+    printError: vi.fn(),
+  }
+}
+
+function nextTick(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve))
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('buildVerifier', () => {
   it('returns undefined when --verify is not set', () => {
@@ -34,5 +75,150 @@ describe('buildVerifier', () => {
     expect(result?.provider).toBe('stripe')
     // No header was passed, so this should land on missing_header
     expect(result?.code).toBe('missing_header')
+  })
+})
+
+describe('runListen', () => {
+  it('starts the server with parsed flags and shuts down on signal', async () => {
+    const signals = new EventEmitter()
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+
+    let capturedOptions: ServerOptions | undefined
+    let port = 4400
+
+    const dbPath = defaultDbPath()
+    const server: Server = {
+      get port() {
+        return port
+      },
+      start: vi.fn(async () => {
+        port = 4411
+      }),
+      stop: vi.fn(async () => {}),
+    }
+
+    const createServerMock = vi.fn((opts: ServerOptions) => {
+      capturedOptions = opts
+      return server
+    })
+
+    const createStorageMock = vi
+      .spyOn(storageModule, 'createStorage')
+      .mockReturnValue(storage as never)
+
+    vi.spyOn(serverModule, 'createServer').mockImplementation(createServerMock)
+
+    const running = runListen(
+      {
+        port: '0',
+        verify: 'stripe',
+        secret: 'whsec_xxx',
+        forwardTo: 'http://localhost:3000/webhook',
+      },
+      { signals: signals as never, terminal },
+    )
+
+    await nextTick()
+
+    expect(createServerMock).toHaveBeenCalledTimes(1)
+    expect(createStorageMock).toHaveBeenCalledWith(dbPath)
+    expect(capturedOptions?.port).toBe(0)
+    expect(capturedOptions?.forwardTo).toBe('http://localhost:3000/webhook')
+    expect(capturedOptions?.verifier?.provider).toBe('stripe')
+    expect(terminal.printListenStarted).toHaveBeenCalledWith({
+      port: 4411,
+      dbPath,
+      verifier: 'stripe',
+      forwardTo: 'http://localhost:3000/webhook',
+    })
+
+    signals.emit('SIGINT')
+    await running
+
+    expect(server.stop).toHaveBeenCalledTimes(1)
+    expect(storage.close).toHaveBeenCalledTimes(1)
+    expect(terminal.printListenStopped).toHaveBeenCalledTimes(1)
+  })
+
+  it('prints captured events through the terminal onEvent callback', async () => {
+    const signals = new EventEmitter()
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+
+    let capturedOptions: ServerOptions | undefined
+
+    const server: Server = {
+      port: 4400,
+      start: vi.fn(async () => {}),
+      stop: vi.fn(async () => {}),
+    }
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+
+    vi.spyOn(serverModule, 'createServer').mockImplementation((opts: ServerOptions) => {
+      capturedOptions = opts
+      return server
+    })
+
+    const running = runListen({ port: '4400' }, { signals: signals as never, terminal })
+
+    await nextTick()
+
+    const event: WebhookEvent = {
+      id: 'evt_test',
+      timestamp: new Date().toISOString(),
+      method: 'POST',
+      path: '/webhook',
+      headers: {},
+      body: '{}',
+    }
+    const result: VerificationResult = {
+      valid: true,
+      provider: 'stripe',
+      code: 'valid',
+      message: 'Signature verified.',
+    }
+
+    capturedOptions?.onEvent?.(event, result)
+
+    expect(terminal.printEventCaptured).toHaveBeenCalledWith(event, result)
+
+    signals.emit('SIGTERM')
+    await running
+  })
+
+  it('rejects invalid port values before creating runtime dependencies', async () => {
+    const createStorageMock = vi.spyOn(storageModule, 'createStorage')
+    const createServerMock = vi.spyOn(serverModule, 'createServer')
+
+    await expect(runListen({ port: 'nope' })).rejects.toThrow(/invalid port/i)
+
+    expect(createStorageMock).not.toHaveBeenCalled()
+    expect(createServerMock).not.toHaveBeenCalled()
+  })
+
+  it('closes storage when server startup fails', async () => {
+    const storage = fakeStorage()
+    const server: Server = {
+      port: 4400,
+      start: vi.fn(async () => {
+        throw new Error('listen failed')
+      }),
+      stop: vi.fn(async () => {}),
+    }
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+    vi.spyOn(serverModule, 'createServer').mockReturnValue(server)
+
+    await expect(
+      runListen(
+        { port: '4400' },
+        { signals: new EventEmitter() as never, terminal: fakeTerminal() },
+      ),
+    ).rejects.toThrow('listen failed')
+
+    expect(server.stop).toHaveBeenCalledTimes(1)
+    expect(storage.close).toHaveBeenCalledTimes(1)
   })
 })

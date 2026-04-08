@@ -14,4 +14,4 @@ program.addCommand(listenCommand)
 program.addCommand(listCommand)
 program.addCommand(replayCommand)
 
-program.parse()
+await program.parseAsync()

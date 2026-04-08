@@ -1,7 +1,15 @@
-import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
+import type * as sqlite from 'node:sqlite'
 import { eventRowSchema, webhookEventSchema, type EventRow, type WebhookEvent } from '../types.js'
+
+const require = createRequire(import.meta.url)
+
+// tsup/esbuild currently rewrites a static `node:sqlite` import to `sqlite`,
+// which breaks the built CLI. Resolve it at runtime so the core module specifier
+// survives the bundle unchanged.
+const { DatabaseSync } = require('node:' + 'sqlite') as typeof sqlite
 
 function rowToEvent(row: EventRow): WebhookEvent {
   return webhookEventSchema.parse({
