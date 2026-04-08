@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import Stripe from 'stripe'
-import { verifyStripeSignature } from '../../src/verify/stripe.js'
+import { createStripeVerifier, verifyStripeSignature } from '../../src/verify/stripe.js'
 
 // We use the official `stripe` SDK as a test oracle: it generates the
 // signed header using Stripe's actual algorithm, and our verifier has to
@@ -246,5 +246,32 @@ describe('verifyStripeSignature - real timestamp', () => {
     })
 
     expect(result.valid).toBe(true)
+  })
+})
+
+describe('createStripeVerifier', () => {
+  it('looks up the stripe-signature header case-insensitively', () => {
+    const verifier = createStripeVerifier({ secret: SECRET })
+    const header = signedHeader(PAYLOAD, SECRET, nowSeconds())
+
+    const result = verifier.verify({
+      body: PAYLOAD,
+      headers: { 'Stripe-Signature': header },
+    })
+
+    expect(result.valid).toBe(true)
+    expect(result.code).toBe('valid')
+  })
+
+  it('still returns missing_header when the signature header is absent', () => {
+    const verifier = createStripeVerifier({ secret: SECRET })
+
+    const result = verifier.verify({
+      body: PAYLOAD,
+      headers: {},
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.code).toBe('missing_header')
   })
 })

@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import type { VerificationResult, Verifier } from '../types.js'
+import { getHeaderCaseInsensitive } from './headers.js'
 
 export interface VerifyStripeOptions {
   payload: string
@@ -138,7 +139,7 @@ export function createStripeVerifier(opts: StripeVerifierOptions): Verifier {
     verify: (event) =>
       verifyStripeSignature({
         payload: event.body,
-        header: event.headers['stripe-signature'],
+        header: getHeaderCaseInsensitive(event.headers, 'stripe-signature'),
         secret: opts.secret,
         tolerance: opts.tolerance,
       }),

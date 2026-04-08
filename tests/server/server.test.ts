@@ -94,6 +94,42 @@ async function postRaw(
   return { status: res.status, body: await res.text(), headers: res.headers }
 }
 
+async function postAbsoluteForm(
+  url: string,
+  requestPath: string,
+  body: string,
+  headers: Record<string, string> = {},
+): Promise<{ status: number; body: string }> {
+  const target = new URL(url)
+  return await new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        method: 'POST',
+        hostname: target.hostname,
+        port: Number(target.port),
+        path: requestPath,
+        headers: {
+          'content-type': 'application/json',
+          'content-length': Buffer.byteLength(body).toString(),
+          ...headers,
+        },
+      },
+      (res) => {
+        const chunks: Buffer[] = []
+        res.on('data', (chunk: Buffer) => chunks.push(chunk))
+        res.on('end', () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            body: Buffer.concat(chunks).toString('utf8'),
+          })
+        })
+      },
+    )
+    req.on('error', reject)
+    req.end(body)
+  })
+}
+
 interface Fixture {
   server: Server
   storage: Storage
@@ -354,6 +390,21 @@ describe('createServer - forwarding', () => {
     expect(downstream.received[0].path).toBe('/custom/path')
   })
 
+  it('retains the configured target origin and base path for forwarded requests', async () => {
+    const downstream = await target()
+    const fx = await hookLens({ forwardTo: `${downstream.url}/webhook` })
+
+    const res = await postAbsoluteForm(
+      fx.url,
+      'http://malicious.invalid/custom/path?source=stripe',
+      '{}',
+    )
+
+    expect(res.status).toBe(200)
+    expect(downstream.received).toHaveLength(1)
+    expect(downstream.received[0].path).toBe('/webhook/custom/path?source=stripe')
+  })
+
   it('forwards stripe-signature so the downstream app can verify too', async () => {
     const downstream = await target()
     const fx = await hookLens({ forwardTo: downstream.url })
@@ -467,6 +518,17 @@ describe('headersForForwarding', () => {
     expect(out['Connection']).toBeUndefined()
     expect(out['TRANSFER-ENCODING']).toBeUndefined()
     expect(out['Content-Type']).toBe('application/json')
+  })
+
+  it('strips headers named by the incoming connection header', () => {
+    const out = headersForForwarding({
+      Connection: 'keep-alive, x-hop',
+      'x-hop': '1',
+      'content-type': 'application/json',
+    })
+    expect(out['Connection']).toBeUndefined()
+    expect(out['x-hop']).toBeUndefined()
+    expect(out['content-type']).toBe('application/json')
   })
 
   it('preserves custom headers like stripe-signature', () => {

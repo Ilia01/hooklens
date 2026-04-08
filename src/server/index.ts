@@ -35,6 +35,18 @@ const FORWARD_STRIP = new Set([
   'content-length',
 ])
 
+function forwardedStripSet(headers: Record<string, string>): Set<string> {
+  const strip = new Set(FORWARD_STRIP)
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() !== 'connection') continue
+    for (const token of value.split(/[,\s]+/)) {
+      const name = token.trim().toLowerCase()
+      if (name) strip.add(name)
+    }
+  }
+  return strip
+}
+
 function generateEventId(): string {
   return `evt_${crypto.randomBytes(12).toString('base64url')}`
 }
@@ -59,8 +71,9 @@ function headersToRecord(headers: http.IncomingHttpHeaders): Record<string, stri
 
 export function headersForForwarding(headers: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {}
+  const strip = forwardedStripSet(headers)
   for (const [key, value] of Object.entries(headers)) {
-    if (!FORWARD_STRIP.has(key.toLowerCase())) out[key] = value
+    if (!strip.has(key.toLowerCase())) out[key] = value
   }
   return out
 }
@@ -70,9 +83,20 @@ interface ForwardResult {
   body: string
 }
 
+function forwardPathname(targetPathname: string, incomingPathname: string): string {
+  if (targetPathname === '/' || targetPathname === '') return incomingPathname || '/'
+  if (incomingPathname === '/' || incomingPathname === '') return targetPathname
+  const base = targetPathname.endsWith('/') ? targetPathname.slice(0, -1) : targetPathname
+  const incoming = incomingPathname.startsWith('/') ? incomingPathname : `/${incomingPathname}`
+  return `${base}${incoming}`
+}
+
 async function forwardEvent(targetUrl: string, event: WebhookEvent): Promise<ForwardResult> {
   const target = new URL(targetUrl)
-  const destination = new URL(event.path, target.origin)
+  const destination = new URL(target.href)
+  const parsedEventPath = new URL(event.path, 'http://hooklens.invalid')
+  destination.pathname = forwardPathname(target.pathname, parsedEventPath.pathname)
+  destination.search = parsedEventPath.search
   const hasBody = event.method !== 'GET' && event.method !== 'HEAD'
   const response = await fetch(destination, {
     method: event.method,
