@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import type { VerificationResult } from '../types.js'
+import type { VerificationResult, Verifier } from '../types.js'
 
 export interface VerifyStripeOptions {
   payload: string
@@ -125,4 +125,22 @@ export function verifyStripeSignature(opts: VerifyStripeOptions): VerificationRe
     'signature_mismatch',
     'Signature mismatch. Check your webhook secret matches the Stripe dashboard.',
   )
+}
+
+export interface StripeVerifierOptions {
+  secret: string
+  tolerance?: number
+}
+
+export function createStripeVerifier(opts: StripeVerifierOptions): Verifier {
+  return {
+    provider: PROVIDER,
+    verify: (event) =>
+      verifyStripeSignature({
+        payload: event.body,
+        header: event.headers['stripe-signature'],
+        secret: opts.secret,
+        tolerance: opts.tolerance,
+      }),
+  }
 }

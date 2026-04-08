@@ -41,3 +41,9 @@ export const verificationResultSchema = z.object({
 })
 
 export type VerificationResult = z.infer<typeof verificationResultSchema>
+
+/** Provider signature verifier. See CONTRIBUTING.md → Adding a provider. */
+export interface Verifier {
+  readonly provider: string
+  verify(event: { headers: Record<string, string>; body: string }): VerificationResult
+}
