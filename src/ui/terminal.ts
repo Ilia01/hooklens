@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import type { VerificationResult, WebhookEvent } from '../types.js'
+import type { ReplayResult, VerificationResult, WebhookEvent } from '../types.js'
 
 export interface ListenStartedInfo {
   port: number
@@ -12,6 +12,7 @@ export interface TerminalUI {
   printListenStarted(info: ListenStartedInfo): void
   printEventCaptured(event: WebhookEvent, result: VerificationResult | null): void
   printEventList(events: WebhookEvent[]): void
+  printReplayResult(result: ReplayResult): void
   printListenStopped(): void
   printError(message: string): void
 }
@@ -63,6 +64,17 @@ export function createTerminal(
         const row = `${chalk.dim(event.timestamp)} ${chalk.cyan(event.method)} ${chalk.bold(event.id)} ${event.path}`
         writeLine(stdout, row)
       }
+    },
+
+    printReplayResult(result) {
+      const summary = `${chalk.bold('Replay response:')} ${chalk.cyan(String(result.status))}`
+
+      if (!result.body) {
+        writeLine(stdout, summary)
+        return
+      }
+
+      writeLine(stdout, `${summary} ${result.body}`)
     },
 
     printListenStopped() {

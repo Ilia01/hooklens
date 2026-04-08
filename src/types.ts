@@ -42,6 +42,13 @@ export const verificationResultSchema = z.object({
 
 export type VerificationResult = z.infer<typeof verificationResultSchema>
 
+export const replayResultSchema = z.object({
+  status: z.number().int(),
+  body: z.string(),
+})
+
+export type ReplayResult = z.infer<typeof replayResultSchema>
+
 /** Provider signature verifier. See CONTRIBUTING.md → Adding a provider. */
 export interface Verifier {
   readonly provider: string
