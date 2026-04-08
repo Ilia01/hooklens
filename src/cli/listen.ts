@@ -3,7 +3,7 @@ import path from 'node:path'
 import { Command } from 'commander'
 import { createServer, type Server } from '../server/index.js'
 import { createStorage } from '../storage/index.js'
-import type { Verifier } from '../types.js'
+import type { VerificationResult, Verifier, WebhookEvent } from '../types.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
 import { createStripeVerifier } from '../verify/stripe.js'
 
@@ -57,9 +57,20 @@ export function buildVerifier(flags: ListenFlags): Verifier | undefined {
 
 async function stopServer(server: Server | null): Promise<void> {
   if (!server) return
+  await server.stop()
+}
+
+function printEventCapturedBestEffort(
+  terminal: TerminalUI,
+  event: WebhookEvent,
+  result: VerificationResult | null,
+): void {
   try {
-    await server.stop()
-  } catch {}
+    terminal.printEventCaptured(event, result)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`Failed to print captured event: ${message}`)
+  }
 }
 
 export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Promise<void> {
@@ -83,8 +94,19 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
       listenersAttached = false
     }
 
-    await stopServer(server)
-    storage.close()
+    let stopError: unknown = null
+
+    try {
+      await stopServer(server)
+    } catch (error) {
+      stopError = error
+    } finally {
+      storage.close()
+    }
+
+    if (stopError) {
+      throw stopError
+    }
 
     if (printStopped) {
       terminal.printListenStopped()
@@ -93,6 +115,10 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
 
   let settle: (() => void) | null = null
   let fail: ((error: unknown) => void) | null = null
+  const shutdown = new Promise<void>((resolve, reject) => {
+    settle = resolve
+    fail = reject
+  })
 
   const onSignal = () => {
     void cleanup(true).then(
@@ -107,10 +133,18 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
       storage,
       verifier,
       forwardTo: flags.forwardTo,
-      onEvent: (event, result) => terminal.printEventCaptured(event, result),
+      onEvent: (event, result) => printEventCapturedBestEffort(terminal, event, result),
     })
 
+    signals.on('SIGINT', onSignal)
+    signals.on('SIGTERM', onSignal)
+    listenersAttached = true
+
     await server.start()
+
+    if (cleanedUp) {
+      return await shutdown
+    }
 
     terminal.printListenStarted({
       port: server.port,
@@ -119,14 +153,12 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
       forwardTo: flags.forwardTo,
     })
 
-    return await new Promise<void>((resolve, reject) => {
-      settle = resolve
-      fail = reject
-      signals.on('SIGINT', onSignal)
-      signals.on('SIGTERM', onSignal)
-      listenersAttached = true
-    })
+    return await shutdown
   } catch (error) {
+    if (cleanedUp) {
+      return await shutdown
+    }
+
     await cleanup(false)
     throw error
   }

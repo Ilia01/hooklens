@@ -141,6 +141,58 @@ describe('runListen', () => {
     expect(terminal.printListenStopped).toHaveBeenCalledTimes(1)
   })
 
+  it('handles shutdown signals during startup', async () => {
+    const signals = new EventEmitter()
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+
+    const server: Server = {
+      port: 4400,
+      start: vi.fn(async () => {
+        signals.emit('SIGINT')
+        await nextTick()
+      }),
+      stop: vi.fn(async () => {}),
+    }
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+    vi.spyOn(serverModule, 'createServer').mockReturnValue(server)
+
+    await runListen({ port: '4400' }, { signals: signals as never, terminal })
+
+    expect(server.stop).toHaveBeenCalledTimes(1)
+    expect(storage.close).toHaveBeenCalledTimes(1)
+    expect(terminal.printListenStopped).toHaveBeenCalledTimes(1)
+    expect(terminal.printListenStarted).not.toHaveBeenCalled()
+  })
+
+  it('surfaces stop failures during shutdown', async () => {
+    const signals = new EventEmitter()
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+
+    const server: Server = {
+      port: 4400,
+      start: vi.fn(async () => {}),
+      stop: vi.fn(async () => {
+        throw new Error('stop failed')
+      }),
+    }
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+    vi.spyOn(serverModule, 'createServer').mockReturnValue(server)
+
+    const running = runListen({ port: '4400' }, { signals: signals as never, terminal })
+
+    await nextTick()
+
+    signals.emit('SIGINT')
+
+    await expect(running).rejects.toThrow('stop failed')
+    expect(storage.close).toHaveBeenCalledTimes(1)
+    expect(terminal.printListenStopped).not.toHaveBeenCalled()
+  })
+
   it('prints captured events through the terminal onEvent callback', async () => {
     const signals = new EventEmitter()
     const storage = fakeStorage()
@@ -183,6 +235,57 @@ describe('runListen', () => {
     capturedOptions?.onEvent?.(event, result)
 
     expect(terminal.printEventCaptured).toHaveBeenCalledWith(event, result)
+
+    signals.emit('SIGTERM')
+    await running
+  })
+
+  it('swallows terminal event rendering errors', async () => {
+    const signals = new EventEmitter()
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    let capturedOptions: ServerOptions | undefined
+
+    terminal.printEventCaptured = vi.fn(() => {
+      throw new Error('render failed')
+    })
+
+    const server: Server = {
+      port: 4400,
+      start: vi.fn(async () => {}),
+      stop: vi.fn(async () => {}),
+    }
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+
+    vi.spyOn(serverModule, 'createServer').mockImplementation((opts: ServerOptions) => {
+      capturedOptions = opts
+      return server
+    })
+
+    const running = runListen({ port: '4400' }, { signals: signals as never, terminal })
+
+    await nextTick()
+
+    const event: WebhookEvent = {
+      id: 'evt_test',
+      timestamp: new Date().toISOString(),
+      method: 'POST',
+      path: '/webhook',
+      headers: {},
+      body: '{}',
+    }
+    const result: VerificationResult = {
+      valid: true,
+      provider: 'stripe',
+      code: 'valid',
+      message: 'Signature verified.',
+    }
+
+    expect(() => capturedOptions?.onEvent?.(event, result)).not.toThrow()
+    expect(consoleError).toHaveBeenCalledWith('Failed to print captured event: render failed')
 
     signals.emit('SIGTERM')
     await running
