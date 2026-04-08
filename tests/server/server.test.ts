@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import http from 'node:http'
 import crypto from 'node:crypto'
+import { EventEmitter } from 'node:events'
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
@@ -8,6 +9,8 @@ import Stripe from 'stripe'
 import {
   createServer,
   headersForForwarding,
+  parseEventPath,
+  readBody,
   type Server,
   type ServerOptions,
 } from '../../src/server/index.js'
@@ -188,6 +191,23 @@ async function target(
   return t
 }
 
+function fakeBodyRequest(): {
+  req: http.IncomingMessage
+  socket: EventEmitter & { proxy?: EventEmitter }
+  proxy: EventEmitter
+} {
+  const req = new EventEmitter() as http.IncomingMessage
+  const socket = new EventEmitter() as EventEmitter & { proxy?: EventEmitter }
+  const proxy = new EventEmitter()
+  socket.proxy = proxy
+  Object.defineProperty(req, 'socket', {
+    configurable: true,
+    enumerable: true,
+    value: socket,
+  })
+  return { req, socket, proxy }
+}
+
 describe('createServer - lifecycle', () => {
   it('binds to a port and exposes it after start()', async () => {
     const fx = await hookLens()
@@ -245,6 +265,61 @@ describe('createServer - lifecycle', () => {
       storage.close()
       fs.rmSync(dbPath, { force: true })
     }
+  })
+})
+
+describe('readBody', () => {
+  it.each(['socket', 'proxy'] as const)(
+    'rejects when the %s closes before the request body settles',
+    async (which) => {
+      const { req, socket, proxy } = fakeBodyRequest()
+      const body = readBody(req, 1024)
+
+      req.emit('data', Buffer.from('{"partial":'))
+      ;(which === 'socket' ? socket : proxy).emit('close')
+
+      await expect(body).rejects.toThrow('socket closed during request body')
+    },
+  )
+
+  it('cleans up request and socket listeners after the body settles', async () => {
+    const { req, socket, proxy } = fakeBodyRequest()
+    const body = readBody(req, 1024)
+
+    req.emit('data', Buffer.from('{"ok":true}'))
+    req.emit('end')
+
+    await expect(body).resolves.toBe('{"ok":true}')
+    expect(req.listenerCount('data')).toBe(0)
+    expect(req.listenerCount('end')).toBe(0)
+    expect(req.listenerCount('error')).toBe(0)
+    expect(socket.listenerCount('close')).toBe(0)
+    expect(socket.listenerCount('error')).toBe(0)
+    expect(proxy.listenerCount('close')).toBe(0)
+    expect(proxy.listenerCount('error')).toBe(0)
+  })
+})
+
+describe('parseEventPath', () => {
+  it('parses absolute-form URLs with the URL parser', () => {
+    expect(parseEventPath('http://malicious.invalid/custom/path?source=stripe')).toEqual({
+      pathname: '/custom/path',
+      search: '?source=stripe',
+    })
+  })
+
+  it('keeps network-path references raw', () => {
+    expect(parseEventPath('//evil.invalid/custom/path?source=stripe')).toEqual({
+      pathname: '//evil.invalid/custom/path',
+      search: '?source=stripe',
+    })
+  })
+
+  it('keeps dot segments raw for origin-form paths', () => {
+    expect(parseEventPath('/../escape?source=stripe')).toEqual({
+      pathname: '/../escape',
+      search: '?source=stripe',
+    })
   })
 })
 
@@ -479,6 +554,16 @@ describe('createServer - forwarding', () => {
     expect(forwarded.searchParams.get('source')).toBe('stripe')
     expect(forwarded.searchParams.get('token')).toBe('trusted')
     expect(forwarded.searchParams.get('mode')).toBe('debug')
+  })
+
+  it('applies raw dot-segment paths after the configured base path is joined', async () => {
+    const downstream = await target()
+    const fx = await hookLens({ forwardTo: `${downstream.url}/webhook` })
+
+    const res = await postAbsoluteForm(fx.url, '/../escape?source=stripe', '{}')
+
+    expect(res.status).toBe(200)
+    expect(downstream.received[0].path).toBe('/escape?source=stripe')
   })
 
   it('forwards stripe-signature so the downstream app can verify too', async () => {

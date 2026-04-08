@@ -67,16 +67,30 @@ function isPayloadTooLargeError(error: unknown): error is PayloadTooLargeError {
   return error instanceof PayloadTooLargeError
 }
 
-function readBody(req: http.IncomingMessage, maxBytes: number): Promise<string> {
+function requestSockets(req: http.IncomingMessage): NodeJS.EventEmitter[] {
+  const sockets = new Set<NodeJS.EventEmitter>()
+  sockets.add(req.socket)
+  const proxiedSocket = (req.socket as typeof req.socket & { proxy?: NodeJS.EventEmitter | null })
+    .proxy
+  if (proxiedSocket) sockets.add(proxiedSocket)
+  return [...sockets]
+}
+
+export function readBody(req: http.IncomingMessage, maxBytes: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
     let totalBytes = 0
     let settled = false
+    const sockets = requestSockets(req)
 
     const cleanup = () => {
       req.off('data', onData)
       req.off('end', onEnd)
       req.off('error', onError)
+      for (const socket of sockets) {
+        socket.off('close', onSocketClose)
+        socket.off('error', onSocketError)
+      }
     }
 
     const rejectOnce = (error: Error) => {
@@ -105,10 +119,16 @@ function readBody(req: http.IncomingMessage, maxBytes: number): Promise<string> 
 
     const onEnd = () => resolveOnce(Buffer.concat(chunks, totalBytes).toString('utf8'))
     const onError = (error: Error) => rejectOnce(error)
+    const onSocketClose = () => rejectOnce(new Error('socket closed during request body'))
+    const onSocketError = (error: Error) => rejectOnce(error)
 
     req.on('data', onData)
     req.on('end', onEnd)
     req.on('error', onError)
+    for (const socket of sockets) {
+      socket.on('close', onSocketClose)
+      socket.on('error', onSocketError)
+    }
   })
 }
 
@@ -135,12 +155,34 @@ interface ForwardResult {
   body: string
 }
 
+interface ParsedEventPath {
+  pathname: string
+  search: string
+}
+
 function forwardPathname(targetPathname: string, incomingPathname: string): string {
   if (targetPathname === '/' || targetPathname === '') return incomingPathname || '/'
   if (incomingPathname === '/' || incomingPathname === '') return targetPathname
   const base = targetPathname.endsWith('/') ? targetPathname.slice(0, -1) : targetPathname
   const incoming = incomingPathname.startsWith('/') ? incomingPathname : `/${incomingPathname}`
   return `${base}${incoming}`
+}
+
+export function parseEventPath(path: string): ParsedEventPath {
+  if (/^[A-Za-z][A-Za-z\d+.-]*:/.test(path)) {
+    const parsed = new URL(path)
+    return { pathname: parsed.pathname, search: parsed.search }
+  }
+
+  const queryIndex = path.indexOf('?')
+  if (queryIndex === -1) {
+    return { pathname: path, search: '' }
+  }
+
+  return {
+    pathname: path.slice(0, queryIndex),
+    search: path.slice(queryIndex),
+  }
 }
 
 function mergeForwardSearch(targetSearch: string, incomingSearch: string): string {
@@ -169,11 +211,11 @@ async function forwardEvent(
 ): Promise<ForwardResult> {
   const target = new URL(targetUrl)
   const destination = new URL(target.href)
-  const parsedEventPath = new URL(event.path, 'http://hooklens.invalid')
+  const parsedEventPath = parseEventPath(event.path)
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
-  destination.pathname = forwardPathname(target.pathname, parsedEventPath.pathname)
+  destination.pathname = forwardPathname(destination.pathname, parsedEventPath.pathname)
   destination.search = mergeForwardSearch(destination.search, parsedEventPath.search)
 
   try {
