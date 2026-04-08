@@ -1,6 +1,6 @@
 import http from 'node:http'
 import crypto from 'node:crypto'
-import type { VerificationResult, Verifier, WebhookEvent } from '../types.js'
+import type { ReplayResult, VerificationResult, Verifier, WebhookEvent } from '../types.js'
 import type { createStorage } from '../storage/index.js'
 
 type Storage = ReturnType<typeof createStorage>
@@ -150,11 +150,6 @@ export function headersForForwarding(headers: Record<string, string>): Record<st
   return out
 }
 
-interface ForwardResult {
-  status: number
-  body: string
-}
-
 interface ParsedEventPath {
   pathname: string
   search: string
@@ -204,11 +199,11 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError'
 }
 
-async function forwardEvent(
+export async function forwardEvent(
   targetUrl: string,
   event: WebhookEvent,
-  timeoutMs: number,
-): Promise<ForwardResult> {
+  timeoutMs = DEFAULT_FORWARD_TIMEOUT_MS,
+): Promise<ReplayResult> {
   const target = new URL(targetUrl)
   const destination = new URL(target.href)
   const parsedEventPath = parseEventPath(event.path)

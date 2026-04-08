@@ -28,6 +28,7 @@ function fakeTerminal(): TerminalUI {
     printListenStarted: vi.fn(),
     printEventCaptured: vi.fn(),
     printEventList: vi.fn(),
+    printReplayResult: vi.fn(),
     printListenStopped: vi.fn(),
     printError: vi.fn(),
   }
