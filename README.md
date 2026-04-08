@@ -10,7 +10,7 @@
 </div>
 
 > [!WARNING]
-> HookLens is under active development and not yet published to npm. Star or watch the repo to get notified when the first release drops.
+> HookLens is under active development. Expect changes as more providers and debugging workflows are added.
 
 ---
 
@@ -63,10 +63,15 @@ HookLens intercepts the request at the HTTP level using `node:http` directly, be
 
 ## Install
 
-> [!NOTE]
-> Not on npm yet. For now, you can clone and build locally.
-
 **Requires Node.js 24 or newer** (HookLens uses the built-in `node:sqlite` module).
+
+```bash
+npm install -g hooklens
+```
+
+## Local development
+
+If you want to run HookLens from source or contribute to it:
 
 ```bash
 git clone https://github.com/Ilia01/hooklens.git
