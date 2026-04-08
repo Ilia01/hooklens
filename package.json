@@ -4,12 +4,12 @@
   "description": "Inspect, verify, and replay webhooks from your terminal",
   "type": "module",
   "bin": {
-    "hooklens": "./dist/cli/index.js"
+    "hooklens": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "start": "node dist/cli/index.js",
+    "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
