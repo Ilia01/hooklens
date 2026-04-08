@@ -48,16 +48,17 @@ interface TargetResponse {
   status?: number
   body?: string
   headers?: Record<string, string>
+  delayMs?: number
 }
 
 async function startTarget(
-  responder?: (rec: TargetRecord) => TargetResponse,
+  responder?: (rec: TargetRecord) => TargetResponse | Promise<TargetResponse>,
 ): Promise<TargetServer> {
   const received: TargetRecord[] = []
   const server = http.createServer((req, res) => {
     const chunks: Buffer[] = []
     req.on('data', (c: Buffer) => chunks.push(c))
-    req.on('end', () => {
+    req.on('end', async () => {
       const rec: TargetRecord = {
         method: req.method ?? '',
         path: req.url ?? '',
@@ -65,7 +66,10 @@ async function startTarget(
         body: Buffer.concat(chunks).toString('utf8'),
       }
       received.push(rec)
-      const resp = responder?.(rec) ?? {}
+      const resp = (await responder?.(rec)) ?? {}
+      if (resp.delayMs && resp.delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, resp.delayMs))
+      }
       res.statusCode = resp.status ?? 200
       for (const [k, v] of Object.entries(resp.headers ?? {})) res.setHeader(k, v)
       res.end(resp.body ?? 'ok')
@@ -176,7 +180,9 @@ async function hookLens(opts: Partial<ServerOptions> = {}): Promise<Fixture> {
   return fx
 }
 
-async function target(responder?: (rec: TargetRecord) => TargetResponse): Promise<TargetServer> {
+async function target(
+  responder?: (rec: TargetRecord) => TargetResponse | Promise<TargetResponse>,
+): Promise<TargetServer> {
   const t = await startTarget(responder)
   targets.push(t)
   return t
@@ -191,11 +197,54 @@ describe('createServer - lifecycle', () => {
   it('stop() closes the listener so further requests fail', async () => {
     const fx = await hookLens()
     await fx.server.stop()
+    expect(fx.server.port).toBe(0)
 
     fixtures.pop()
     fx.storage.close()
     fs.rmSync(fx.dbPath, { force: true })
     await expect(postRaw(fx.url, '{}')).rejects.toThrow()
+  })
+
+  it('rejects concurrent and repeated start() calls', async () => {
+    const dbPath = tmpDb()
+    const storage = createStorage(dbPath)
+    const server = createServer({ port: 0, storage })
+
+    try {
+      const firstStart = server.start()
+      await expect(server.start()).rejects.toThrow('server already started')
+      await firstStart
+      await expect(server.start()).rejects.toThrow('server already started')
+    } finally {
+      await server.stop()
+      storage.close()
+      fs.rmSync(dbPath, { force: true })
+    }
+  })
+
+  it('clears startup state after a failed listen so start() can be retried', async () => {
+    const blocker = http.createServer()
+    await new Promise<void>((resolve) => blocker.listen(0, '127.0.0.1', () => resolve()))
+    const addr = blocker.address()
+    if (!addr || typeof addr === 'string') throw new Error('blocker bad addr')
+
+    const dbPath = tmpDb()
+    const storage = createStorage(dbPath)
+    const server = createServer({ port: addr.port, storage })
+
+    try {
+      await expect(server.start()).rejects.toThrow()
+      await new Promise<void>((resolve) => blocker.close(() => resolve()))
+      await expect(server.start()).resolves.toBeUndefined()
+      expect(server.port).toBe(addr.port)
+    } finally {
+      if (blocker.listening) {
+        await new Promise<void>((resolve) => blocker.close(() => resolve()))
+      }
+      await server.stop()
+      storage.close()
+      fs.rmSync(dbPath, { force: true })
+    }
   })
 })
 
@@ -280,6 +329,18 @@ describe('createServer - request capture', () => {
     // second arg is null because no verify configured
     expect(onEvent.mock.calls[0][1]).toBeNull()
     expect(onEvent.mock.calls[0][0].body).toBe('{"a":1}')
+  })
+
+  it('returns 413 and skips storage when the body exceeds maxBodyBytes', async () => {
+    const onEvent = vi.fn<(e: WebhookEvent, r: VerificationResult | null) => void>()
+    const fx = await hookLens({ maxBodyBytes: 8, onEvent })
+
+    const res = await postRaw(`${fx.url}/`, '{"too":"large"}')
+
+    expect(res.status).toBe(413)
+    expect(res.body).toBe('payload too large: max 8 bytes')
+    expect(fx.storage.list()).toHaveLength(0)
+    expect(onEvent).not.toHaveBeenCalled()
   })
 })
 
@@ -405,6 +466,21 @@ describe('createServer - forwarding', () => {
     expect(downstream.received[0].path).toBe('/webhook/custom/path?source=stripe')
   })
 
+  it('preserves trusted forwardTo query params over incoming query params', async () => {
+    const downstream = await target()
+    const fx = await hookLens({
+      forwardTo: `${downstream.url}/webhook?token=trusted&mode=debug`,
+    })
+
+    await postRaw(`${fx.url}/custom/path?source=stripe&token=attacker`, '{}')
+
+    const forwarded = new URL(downstream.received[0].path, 'http://hooklens.invalid')
+    expect(forwarded.pathname).toBe('/webhook/custom/path')
+    expect(forwarded.searchParams.get('source')).toBe('stripe')
+    expect(forwarded.searchParams.get('token')).toBe('trusted')
+    expect(forwarded.searchParams.get('mode')).toBe('debug')
+  })
+
   it('forwards stripe-signature so the downstream app can verify too', async () => {
     const downstream = await target()
     const fx = await hookLens({ forwardTo: downstream.url })
@@ -445,6 +521,16 @@ describe('createServer - forwarding', () => {
     expect(res.status).toBe(502)
   })
 
+  it('returns 502 when the downstream target exceeds forwardTimeoutMs', async () => {
+    const downstream = await target(() => ({ delayMs: 50, body: 'slow' }))
+    const fx = await hookLens({ forwardTo: downstream.url, forwardTimeoutMs: 10 })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(502)
+    expect(res.body).toBe('bad gateway')
+  })
+
   it('acks 200 when no forwardTo is configured', async () => {
     const fx = await hookLens()
 
@@ -461,6 +547,18 @@ describe('createServer - forwarding', () => {
 
     expect(fx.storage.list()).toHaveLength(1)
     expect(onEvent).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns 413 and does not forward when the body exceeds maxBodyBytes', async () => {
+    const downstream = await target()
+    const fx = await hookLens({ forwardTo: downstream.url, maxBodyBytes: 8 })
+
+    const res = await postRaw(`${fx.url}/`, '{"too":"large"}')
+
+    expect(res.status).toBe(413)
+    expect(res.body).toBe('payload too large: max 8 bytes')
+    expect(downstream.received).toHaveLength(0)
+    expect(fx.storage.list()).toHaveLength(0)
   })
 })
 
