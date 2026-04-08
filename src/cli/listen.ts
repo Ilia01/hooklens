@@ -1,8 +1,6 @@
-import os from 'node:os'
-import path from 'node:path'
 import { Command } from 'commander'
 import { createServer, type Server } from '../server/index.js'
-import { createStorage } from '../storage/index.js'
+import { createStorage, defaultDbPath } from '../storage/index.js'
 import type { VerificationResult, Verifier, WebhookEvent } from '../types.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
 import { createStripeVerifier } from '../verify/stripe.js'
@@ -22,10 +20,6 @@ export interface SignalBus {
 export interface ListenDeps {
   signals?: SignalBus
   terminal?: TerminalUI
-}
-
-export function defaultDbPath(): string {
-  return path.join(os.homedir(), '.hooklens', 'events.db')
 }
 
 function parsePort(port: string | number | undefined): number {

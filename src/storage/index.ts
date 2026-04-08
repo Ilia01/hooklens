@@ -1,3 +1,4 @@
+import os from 'node:os'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -10,6 +11,10 @@ const require = createRequire(import.meta.url)
 // which breaks the built CLI. Resolve it at runtime so the core module specifier
 // survives the bundle unchanged.
 const { DatabaseSync } = require('node:' + 'sqlite') as typeof sqlite
+
+export function defaultDbPath(): string {
+  return path.join(os.homedir(), '.hooklens', 'events.db')
+}
 
 function rowToEvent(row: EventRow): WebhookEvent {
   return webhookEventSchema.parse({
