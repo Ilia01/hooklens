@@ -282,7 +282,11 @@ export function createServer(opts: ServerOptions): Server {
       res.end(forwarded.body)
     } catch (error) {
       const err = toError(error)
-      opts.onForwardError?.(event, err)
+      try {
+        opts.onForwardError?.(event, err)
+      } catch {
+        // Don't let a broken callback turn a 502 into a 500.
+      }
       res.statusCode = 502
       res.end(`bad gateway: ${err.message}`)
     }

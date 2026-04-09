@@ -649,6 +649,19 @@ describe('createServer - forwarding', () => {
     expect(error.message.length).toBeGreaterThan(0)
   })
 
+  it('still returns 502 when onForwardError throws', async () => {
+    const onForwardError = vi.fn(() => {
+      throw new Error('callback exploded')
+    })
+    const fx = await hookLens({ forwardTo: 'http://127.0.0.1:1', onForwardError })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(502)
+    expect(res.body).toMatch(/^bad gateway: /)
+    expect(onForwardError).toHaveBeenCalledTimes(1)
+  })
+
   it('returns 413 and does not forward when the body exceeds maxBodyBytes', async () => {
     const downstream = await target()
     const fx = await hookLens({ forwardTo: downstream.url, maxBodyBytes: 8 })
