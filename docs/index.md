@@ -56,7 +56,10 @@ hero:
 </div>
 
 <div class="home-cta">
-
-Start with [Getting Started](./getting-started) for the first capture flow, or jump to [Commands](./commands/) for the full CLI reference. More providers can be added without changing the server or storage layers the verifier seam is documented in [Adding Providers](./verification/adding-providers).
-
+  <p>
+    Start with <a href="./getting-started">Getting Started</a> for the first capture flow, or jump to
+    <a href="./commands/">Commands</a> for the full CLI reference. More providers can be added without changing the server or
+    storage layers. The verifier seam is documented in
+    <a href="./verification/adding-providers">Adding Providers</a>.
+  </p>
 </div>

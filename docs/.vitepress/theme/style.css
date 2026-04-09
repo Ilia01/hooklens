@@ -110,7 +110,6 @@
 
 .dark .home-demo-frame {
   border: 1px solid rgba(148, 163, 184, 0.12);
-  background-color: #0f172a;
   background:
     radial-gradient(circle at top left, rgba(45, 212, 191, 0.14), transparent 36%),
     radial-gradient(circle at top right, rgba(251, 191, 36, 0.12), transparent 34%),
