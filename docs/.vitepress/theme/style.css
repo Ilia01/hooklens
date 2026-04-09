@@ -1,25 +1,24 @@
 :root {
   --vp-c-brand-1: #0f766e;
-  --vp-c-brand-2: #0d9488;
-  --vp-c-brand-3: #14b8a6;
-  --vp-c-brand-soft: rgba(20, 184, 166, 0.16);
+  --vp-c-brand-2: #0a6b63;
+  --vp-c-brand-3: #115e59;
+  --vp-c-brand-soft: #dffaf6;
   --vp-button-brand-border: #0f766e;
   --vp-button-brand-text: #f8fafc;
   --vp-button-brand-bg: #0f766e;
-  --vp-button-brand-hover-border: #0d9488;
+  --vp-button-brand-hover-border: #0a6b63;
   --vp-button-brand-hover-text: #f8fafc;
-  --vp-button-brand-hover-bg: #0d9488;
+  --vp-button-brand-hover-bg: #0a6b63;
   --vp-button-brand-active-border: #115e59;
   --vp-button-brand-active-text: #f8fafc;
   --vp-button-brand-active-bg: #115e59;
-  --vp-button-alt-border: rgba(148, 163, 184, 0.18);
-  --vp-button-alt-text: #e5e7eb;
-  --vp-button-alt-bg: rgba(30, 41, 59, 0.72);
-  --vp-button-alt-hover-border: rgba(148, 163, 184, 0.3);
+  --vp-button-alt-border: #475569;
+  --vp-button-alt-text: #f8fafc;
+  --vp-button-alt-bg: #334155;
+  --vp-button-alt-hover-border: #334155;
   --vp-button-alt-hover-text: #f8fafc;
-  --vp-button-alt-hover-bg: rgba(51, 65, 85, 0.92);
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #0f766e 0%, #f59e0b 100%);
+  --vp-button-alt-hover-bg: #1e293b;
+  --vp-home-hero-name-background: none;
   --vp-home-hero-image-background-image:
     radial-gradient(circle at 30% 30%, rgba(20, 184, 166, 0.28), transparent 42%),
     radial-gradient(circle at 70% 35%, rgba(245, 158, 11, 0.24), transparent 36%),
@@ -31,26 +30,26 @@
   --vp-c-brand-1: #2dd4bf;
   --vp-c-brand-2: #5eead4;
   --vp-c-brand-3: #99f6e4;
-  --vp-c-brand-soft: rgba(45, 212, 191, 0.18);
+  --vp-c-brand-soft: #123734;
   --vp-c-text-1: rgba(248, 250, 252, 0.96);
   --vp-c-text-2: rgba(226, 232, 240, 0.84);
   --vp-c-text-3: rgba(148, 163, 184, 0.88);
   --vp-button-brand-border: #0f766e;
   --vp-button-brand-text: #f8fafc;
   --vp-button-brand-bg: #0f766e;
-  --vp-button-brand-hover-border: #0d9488;
+  --vp-button-brand-hover-border: #0a6b63;
   --vp-button-brand-hover-text: #f8fafc;
-  --vp-button-brand-hover-bg: #0d9488;
+  --vp-button-brand-hover-bg: #0a6b63;
   --vp-button-brand-active-border: #115e59;
   --vp-button-brand-active-text: #f8fafc;
   --vp-button-brand-active-bg: #115e59;
-  --vp-button-alt-border: rgba(148, 163, 184, 0.18);
-  --vp-button-alt-text: #e5e7eb;
-  --vp-button-alt-bg: rgba(30, 41, 59, 0.72);
-  --vp-button-alt-hover-border: rgba(148, 163, 184, 0.3);
+  --vp-button-alt-border: #475569;
+  --vp-button-alt-text: #f8fafc;
+  --vp-button-alt-bg: #1e293b;
+  --vp-button-alt-hover-border: #64748b;
   --vp-button-alt-hover-text: #f8fafc;
-  --vp-button-alt-hover-bg: rgba(51, 65, 85, 0.92);
-  --vp-home-hero-name-background: linear-gradient(120deg, #5eead4 0%, #fbbf24 100%);
+  --vp-button-alt-hover-bg: #334155;
+  --vp-home-hero-name-background: none;
   --vp-home-hero-image-background-image:
     radial-gradient(circle at 28% 30%, rgba(45, 212, 191, 0.24), transparent 42%),
     radial-gradient(circle at 72% 32%, rgba(251, 191, 36, 0.2), transparent 36%),
@@ -63,6 +62,10 @@
 
 .VPHero .image-bg {
   opacity: 1;
+}
+
+.VPHero .name {
+  color: var(--vp-c-brand-1);
 }
 
 .VPHero .tagline {
@@ -107,6 +110,7 @@
 
 .dark .home-demo-frame {
   border: 1px solid rgba(148, 163, 184, 0.12);
+  background-color: #0f172a;
   background:
     radial-gradient(circle at top left, rgba(45, 212, 191, 0.14), transparent 36%),
     radial-gradient(circle at top right, rgba(251, 191, 36, 0.12), transparent 34%),
@@ -143,7 +147,7 @@
 
 .dark .home-feature-card {
   border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(17, 24, 39, 0.72);
+  background: #111827;
 }
 
 .home-providers {
@@ -175,27 +179,27 @@
 }
 
 .provider-stripe {
-  border-color: rgba(99, 91, 255, 0.18);
-  background: rgba(99, 91, 255, 0.06);
-  color: #4f46e5;
+  border-color: #c7d2fe;
+  background: #eef2ff;
+  color: #4338ca;
 }
 
 .provider-github {
-  border-color: rgba(71, 85, 105, 0.18);
-  background: rgba(148, 163, 184, 0.08);
+  border-color: #cbd5e1;
+  background: #f1f5f9;
   color: #334155;
 }
 
 .dark .provider-stripe {
-  border-color: rgba(99, 91, 255, 0.25);
-  background: rgba(99, 91, 255, 0.08);
-  color: #a5b4fc;
+  border-color: #4338ca;
+  background: #1e1b4b;
+  color: #c7d2fe;
 }
 
 .dark .provider-github {
-  border-color: rgba(148, 163, 184, 0.2);
-  background: rgba(148, 163, 184, 0.08);
-  color: #cbd5e1;
+  border-color: #334155;
+  background: #1e293b;
+  color: #e2e8f0;
 }
 
 .home-cta {

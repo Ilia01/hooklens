@@ -34,16 +34,16 @@ hero:
 
 <div class="home-feature-grid">
   <div class="home-feature-card">
-    <h2>Capture the raw request</h2>
-    <p>HookLens listens on node:http directly, stores the original request body, and keeps the request shape intact for replay and inspection.</p>
+    <h2>Capture raw requests</h2>
+    <p>Store the exact payload, headers, and path for later inspection.</p>
   </div>
   <div class="home-feature-card">
-    <h2>Diagnose signature failures</h2>
-    <p>Stripe and GitHub verification report specific failure codes like missing header, malformed header, expired timestamp, body mutation, and signature mismatch.</p>
+    <h2>Explain verification failures</h2>
+    <p>Get specific failure reasons instead of a generic signature mismatch.</p>
   </div>
   <div class="home-feature-card">
-    <h2>Replay without guesswork</h2>
-    <p>Stored events can be replayed to a new target after you change middleware, secrets, or handler logic. Forwarding preserves trusted target origin and base path behavior.</p>
+    <h2>Replay safely</h2>
+    <p>Resend stored events to a new target after changing your app setup.</p>
   </div>
 </div>
 
