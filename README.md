@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Ilia01/hooklens/main/docs/public/logo.svg" alt="HookLens logo" width="88" height="88">
+<img src="./docs/public/logo.svg" alt="HookLens logo" width="88" height="88">
 
 # HookLens
 
