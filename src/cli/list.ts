@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import { errorMessage } from '../errors.js'
 import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
 
@@ -37,13 +38,20 @@ export async function runList(flags: ListFlags, deps: ListDeps = {}): Promise<vo
 export const listCommand = new Command('list')
   .description('Show received webhook events')
   .option('-n, --limit <count>', 'Number of events to show', '20')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  hooklens list
+  hooklens list -n 5`,
+  )
   .action(async (options) => {
     const terminal = createTerminal()
 
     try {
       await runList(options, { terminal })
     } catch (error) {
-      terminal.printError(error instanceof Error ? error.message : String(error))
+      terminal.printError(errorMessage(error))
       process.exitCode = 1
     }
   })

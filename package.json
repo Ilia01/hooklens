@@ -1,6 +1,6 @@
 {
   "name": "hooklens",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Inspect, verify, and replay webhooks from your terminal",
   "type": "module",
   "bin": {
@@ -49,6 +49,7 @@
     "LICENSE"
   ],
   "devDependencies": {
+    "@octokit/webhooks-methods": "^6.0.0",
     "@types/node": "^22.0.0",
     "eslint": "^9.0.0",
     "husky": "^9.1.7",

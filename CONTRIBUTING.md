@@ -53,7 +53,7 @@ That's the whole seam. Pick your own headers, run whatever crypto you need. HMAC
 
 **1. Write the verification logic** in `src/verify/<provider>.ts`.
 
-Export a factory that takes provider-specific config and returns a `Verifier`. See `src/verify/stripe.ts` for the reference shape: it exports `verifyStripeSignature` (the primitive) and `createStripeVerifier` (the factory).
+Export a factory that takes provider-specific config and returns a `Verifier`. See `src/verify/stripe.ts` or `src/verify/github.ts` for the reference shape: each exports a verification primitive and a factory.
 
 **2. Write tests** in `tests/verify/<provider>.test.ts`.
 

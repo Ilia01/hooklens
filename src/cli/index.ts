@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import { errorMessage } from '../errors.js'
 import { listenCommand } from './listen.js'
 import { listCommand } from './list.js'
 import { replayCommand } from './replay.js'
@@ -17,7 +18,6 @@ program.addCommand(replayCommand)
 try {
   await program.parseAsync(process.argv)
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error)
-  console.error(message)
+  console.error(errorMessage(error))
   process.exitCode = 1
 }

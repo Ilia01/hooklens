@@ -30,6 +30,7 @@ function fakeTerminal(): TerminalUI {
   return {
     printListenStarted: vi.fn(),
     printEventCaptured: vi.fn(),
+    printForwardError: vi.fn(),
     printEventList: vi.fn(),
     printReplayResult: vi.fn(),
     printListenStopped: vi.fn(),
@@ -63,7 +64,18 @@ describe('buildVerifier', () => {
   })
 
   it('throws on an unknown provider with a helpful message', () => {
-    expect(() => buildVerifier({ verify: 'github', secret: 'x' })).toThrow(/unknown.*github/i)
+    expect(() => buildVerifier({ verify: 'paddle', secret: 'x' })).toThrow(/unknown.*paddle/i)
+  })
+
+  it('returns a github Verifier when --verify=github and --secret are both set', () => {
+    const verifier = buildVerifier({ verify: 'github', secret: 'ghsecret_xxx' })
+    expect(verifier).toBeDefined()
+    expect(verifier?.provider).toBe('github')
+    expect(typeof verifier?.verify).toBe('function')
+  })
+
+  it('throws when --verify=github is set without --secret', () => {
+    expect(() => buildVerifier({ verify: 'github' })).toThrow(/secret/i)
   })
 
   it('produces a Verifier whose verify() actually returns a result', () => {
