@@ -10,6 +10,7 @@ export interface VerifyGitHubOptions {
 
 const PROVIDER = 'github'
 const PREFIX = 'sha256='
+const SHA256_HEX = /^[0-9a-fA-F]{64}$/
 
 function computeHmac(secret: string, payload: string): string {
   return crypto.createHmac('sha256', secret).update(payload).digest('hex')
@@ -50,16 +51,21 @@ export function verifyGitHubSignature(opts: VerifyGitHubOptions): VerificationRe
     return failure('malformed_header', 'x-hub-signature-256 header has no signature after sha256=')
   }
 
+  if (!SHA256_HEX.test(signature)) {
+    return failure('malformed_header', 'x-hub-signature-256 header has invalid sha256 hex digest')
+  }
+
+  const normalizedSignature = signature.toLowerCase()
   const expected = computeHmac(opts.secret, opts.payload)
 
-  if (constantTimeMatch(expected, signature)) {
+  if (constantTimeMatch(expected, normalizedSignature)) {
     return success('Signature verified.')
   }
 
   const canonical = tryCanonicalForm(opts.payload)
   if (canonical !== null) {
     const expectedCanonical = computeHmac(opts.secret, canonical)
-    if (constantTimeMatch(expectedCanonical, signature)) {
+    if (constantTimeMatch(expectedCanonical, normalizedSignature)) {
       return failure(
         'body_mutated',
         'Signature mismatch with correct secret. Body was likely parsed and re-serialized by your framework.',

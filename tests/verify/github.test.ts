@@ -66,6 +66,20 @@ describe('verifyGitHubSignature - happy path', () => {
 
     expect(result.valid).toBe(true)
   })
+
+  it('accepts an uppercase sha256 hex digest', async () => {
+    const header = await signPayload(SECRET, PAYLOAD)
+    const uppercaseDigest = `sha256=${header.slice('sha256='.length).toUpperCase()}`
+
+    const result = verifyGitHubSignature({
+      payload: PAYLOAD,
+      header: uppercaseDigest,
+      secret: SECRET,
+    })
+
+    expect(result.valid).toBe(true)
+    expect(result.code).toBe('valid')
+  })
 })
 
 describe('verifyGitHubSignature - missing_header', () => {
@@ -124,6 +138,18 @@ describe('verifyGitHubSignature - malformed_header', () => {
 
     expect(result.valid).toBe(false)
     expect(result.code).toBe('malformed_header')
+  })
+
+  it('rejects a non-hex digest after the sha256= prefix', () => {
+    const result = verifyGitHubSignature({
+      payload: PAYLOAD,
+      header: 'sha256=not-a-hex-string!!!',
+      secret: SECRET,
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.code).toBe('malformed_header')
+    expect(result.message).toContain('invalid sha256 hex digest')
   })
 })
 
