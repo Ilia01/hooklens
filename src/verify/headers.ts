@@ -8,3 +8,12 @@ export function getHeaderCaseInsensitive(
   }
   return undefined
 }
+
+export function tryCanonicalForm(payload: string): string | null {
+  try {
+    const canonical = JSON.stringify(JSON.parse(payload))
+    return canonical === payload ? null : canonical
+  } catch {
+    return null
+  }
+}

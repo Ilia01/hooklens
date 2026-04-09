@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import { errorMessage } from '../errors.js'
 import { forwardEvent } from '../server/index.js'
 import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
@@ -48,8 +49,7 @@ export async function runReplay(
         body,
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      throw new Error(`Failed to replay "${eventId}" to ${targetUrl}: ${message}`)
+      throw new Error(`Failed to replay "${eventId}" to ${targetUrl}: ${errorMessage(error)}`)
     }
   } finally {
     storage.close()
@@ -60,13 +60,20 @@ export const replayCommand = new Command('replay')
   .description('Replay a stored webhook event')
   .argument('<event-id>', 'ID of the event to replay')
   .option('--to <url>', 'Target URL to send the event to', DEFAULT_REPLAY_TARGET_URL)
+  .addHelpText(
+    'after',
+    `
+Examples:
+  hooklens replay evt_abc123
+  hooklens replay evt_abc123 --to http://localhost:8080/hook`,
+  )
   .action(async (eventId, options) => {
     const terminal = createTerminal()
 
     try {
       await runReplay(eventId, options, { terminal })
     } catch (error) {
-      terminal.printError(error instanceof Error ? error.message : String(error))
+      terminal.printError(errorMessage(error))
       process.exitCode = 1
     }
   })

@@ -11,6 +11,7 @@ export interface ListenStartedInfo {
 export interface TerminalUI {
   printListenStarted(info: ListenStartedInfo): void
   printEventCaptured(event: WebhookEvent, result: VerificationResult | null): void
+  printForwardError(eventId: string, reason: string): void
   printEventList(events: WebhookEvent[]): void
   printReplayResult(result: ReplayResult): void
   printListenStopped(): void
@@ -52,6 +53,10 @@ export function createTerminal(
       }
 
       writeLine(stdout, `${summary} ${result.message}`)
+    },
+
+    printForwardError(eventId, reason) {
+      writeLine(stdout, `${chalk.red('FWD')} ${chalk.bold(eventId)} ${reason}`)
     },
 
     printEventList(events) {

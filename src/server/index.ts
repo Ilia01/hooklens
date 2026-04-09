@@ -1,5 +1,6 @@
 import http from 'node:http'
 import crypto from 'node:crypto'
+import { errorMessage, toError } from '../errors.js'
 import type { ReplayResult, VerificationResult, Verifier, WebhookEvent } from '../types.js'
 import type { createStorage } from '../storage/index.js'
 
@@ -13,6 +14,7 @@ export interface ServerOptions {
   forwardTimeoutMs?: number
   maxBodyBytes?: number
   onEvent?: (event: WebhookEvent, result: VerificationResult | null) => void
+  onForwardError?: (event: WebhookEvent, error: Error) => void
 }
 
 export interface Server {
@@ -230,7 +232,13 @@ export async function forwardEvent(
     if (isAbortError(error)) {
       throw new Error(`forward timed out after ${timeoutMs}ms`)
     }
-    throw error
+    // fetch() wraps the real error (e.g. ECONNREFUSED) inside error.cause.
+    // AggregateError (localhost resolving to both IPv6 and IPv4) has an empty
+    // message but a useful code property. Fall back through each layer.
+    const cause = error instanceof Error ? error.cause : undefined
+    const code = cause instanceof Error ? (cause as NodeJS.ErrnoException).code : undefined
+    const message = cause instanceof Error && cause.message ? cause.message : code
+    throw new Error(message ?? errorMessage(error))
   } finally {
     clearTimeout(timeout)
   }
@@ -272,9 +280,11 @@ export function createServer(opts: ServerOptions): Server {
       const forwarded = await forwardEvent(opts.forwardTo, event, forwardTimeoutMs)
       res.statusCode = forwarded.status
       res.end(forwarded.body)
-    } catch {
+    } catch (error) {
+      const err = toError(error)
+      opts.onForwardError?.(event, err)
       res.statusCode = 502
-      res.end('bad gateway')
+      res.end(`bad gateway: ${err.message}`)
     }
   }
 
@@ -297,7 +307,7 @@ export function createServer(opts: ServerOptions): Server {
             return
           }
           res.statusCode = 500
-          res.end(err instanceof Error ? err.message : String(err))
+          res.end(errorMessage(err))
         })
       })
       httpServer = server

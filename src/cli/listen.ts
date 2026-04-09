@@ -1,8 +1,10 @@
 import { Command } from 'commander'
+import { errorMessage } from '../errors.js'
 import { createServer, type Server } from '../server/index.js'
 import { createStorage, defaultDbPath } from '../storage/index.js'
 import type { VerificationResult, Verifier, WebhookEvent } from '../types.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
+import { createGitHubVerifier } from '../verify/github.js'
 import { createStripeVerifier } from '../verify/stripe.js'
 
 export interface ListenFlags {
@@ -44,8 +46,14 @@ export function buildVerifier(flags: ListenFlags): Verifier | undefined {
       }
       return createStripeVerifier({ secret: flags.secret })
     }
+    case 'github': {
+      if (!flags.secret) {
+        throw new Error('--secret is required when --verify github is set')
+      }
+      return createGitHubVerifier({ secret: flags.secret })
+    }
     default:
-      throw new Error(`Unknown --verify provider "${flags.verify}". Supported: stripe`)
+      throw new Error(`Unknown --verify provider "${flags.verify}". Supported: stripe, github`)
   }
 }
 
@@ -62,8 +70,7 @@ function printEventCapturedBestEffort(
   try {
     terminal.printEventCaptured(event, result)
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error(`Failed to print captured event: ${message}`)
+    console.error(`Failed to print captured event: ${errorMessage(error)}`)
   }
 }
 
@@ -128,6 +135,7 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
       verifier,
       forwardTo: flags.forwardTo,
       onEvent: (event, result) => printEventCapturedBestEffort(terminal, event, result),
+      onForwardError: (event, error) => terminal.printForwardError(event.id, error.message),
     })
 
     signals.on('SIGINT', onSignal)
@@ -161,16 +169,25 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
 export const listenCommand = new Command('listen')
   .description('Start receiving webhooks')
   .option('-p, --port <port>', 'Port to listen on', '4400')
-  .option('--verify <provider>', 'Verify signatures (stripe)')
+  .option('--verify <provider>', 'Verify signatures (stripe, github)')
   .option('--secret <secret>', 'Webhook signing secret')
   .option('--forward-to <url>', 'Forward received webhooks to this URL')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  hooklens listen
+  hooklens listen -p 8080 --forward-to http://localhost:3000/webhook
+  hooklens listen --verify stripe --secret whsec_xxx
+  hooklens listen --verify github --secret ghsecret_xxx`,
+  )
   .action(async (options) => {
     const terminal = createTerminal()
 
     try {
       await runListen(options, { terminal })
     } catch (error) {
-      terminal.printError(error instanceof Error ? error.message : String(error))
+      terminal.printError(errorMessage(error))
 
       process.exitCode = 1
     }

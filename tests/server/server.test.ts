@@ -591,8 +591,7 @@ describe('createServer - forwarding', () => {
     expect(res.body).toBe('teapot')
   })
 
-  it('returns 502 when the forward target is unreachable', async () => {
-    // find a port nothing is listening on, then use it
+  it('returns 502 with reason when the forward target is unreachable', async () => {
     const probe = http.createServer()
     await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', () => resolve()))
     const addr = probe.address()
@@ -604,16 +603,19 @@ describe('createServer - forwarding', () => {
 
     const res = await postRaw(`${fx.url}/`, '{}')
     expect(res.status).toBe(502)
+    expect(res.body).toMatch(/^bad gateway: /)
+    expect(res.body).toMatch(/ECONNREFUSED/)
   })
 
-  it('returns 502 when the downstream target exceeds forwardTimeoutMs', async () => {
+  it('returns 502 with reason when the downstream target exceeds forwardTimeoutMs', async () => {
     const downstream = await target(() => ({ delayMs: 50, body: 'slow' }))
     const fx = await hookLens({ forwardTo: downstream.url, forwardTimeoutMs: 10 })
 
     const res = await postRaw(`${fx.url}/`, '{}')
 
     expect(res.status).toBe(502)
-    expect(res.body).toBe('bad gateway')
+    expect(res.body).toMatch(/^bad gateway: /)
+    expect(res.body).toMatch(/timed out/)
   })
 
   it('acks 200 when no forwardTo is configured', async () => {
@@ -632,6 +634,19 @@ describe('createServer - forwarding', () => {
 
     expect(fx.storage.list()).toHaveLength(1)
     expect(onEvent).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls onForwardError with the event and error when forwarding fails', async () => {
+    const onForwardError = vi.fn<(e: WebhookEvent, err: Error) => void>()
+    const fx = await hookLens({ forwardTo: 'http://127.0.0.1:1', onForwardError })
+
+    await postRaw(`${fx.url}/`, '{"a":1}')
+
+    expect(onForwardError).toHaveBeenCalledTimes(1)
+    const [event, error] = onForwardError.mock.calls[0]
+    expect(event.body).toBe('{"a":1}')
+    expect(error).toBeInstanceOf(Error)
+    expect(error.message.length).toBeGreaterThan(0)
   })
 
   it('returns 413 and does not forward when the body exceeds maxBodyBytes', async () => {

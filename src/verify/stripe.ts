@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import type { VerificationResult, Verifier } from '../types.js'
-import { getHeaderCaseInsensitive } from './headers.js'
+import { getHeaderCaseInsensitive, tryCanonicalForm } from './headers.js'
 
 export interface VerifyStripeOptions {
   payload: string
@@ -54,15 +54,6 @@ function constantTimeMatch(expected: string, candidates: string[]): boolean {
     if (crypto.timingSafeEqual(expectedBuf, candidateBuf)) return true
   }
   return false
-}
-
-function tryCanonicalForm(payload: string): string | null {
-  try {
-    const canonical = JSON.stringify(JSON.parse(payload))
-    return canonical === payload ? null : canonical
-  } catch {
-    return null
-  }
 }
 
 function success(message: string): VerificationResult {
