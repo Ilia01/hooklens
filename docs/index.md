@@ -5,6 +5,9 @@ hero:
   name: HookLens
   text: Inspect, verify, and replay webhooks
   tagline: Figure out why webhook signature verification failed before your framework hides the evidence.
+  image:
+    src: /logo.svg
+    alt: HookLens
   actions:
     - theme: brand
       text: Getting Started
@@ -15,33 +18,48 @@ hero:
     - theme: alt
       text: GitHub
       link: https://github.com/Ilia01/hooklens
-
-features:
-  - title: Capture the raw request
-    details: HookLens listens on node:http directly, stores the original request body, and keeps the request shape intact for replay and inspection.
-  - title: Diagnose signature failures
-    details: Stripe and GitHub verification report specific failure codes like missing header, malformed header, expired timestamp, body mutation, and signature mismatch.
-  - title: Replay without guesswork
-    details: Stored events can be replayed to a new target after you change middleware, secrets, or handler logic. Forwarding preserves trusted target origin and base path behavior.
 ---
 
-## What HookLens is for
+<div class="home-demo">
+  <p class="home-demo-copy">
+    HookLens sits between the webhook provider and your app. It captures the request, verifies it, stores it locally, and can forward or replay it later.
+  </p>
+  <div class="home-demo-frame">
+    <img
+      src="/hooklens-demo.gif"
+      alt="HookLens demo showing listen, list, and replay across two terminal panes with failing and successful GitHub webhook verification."
+    />
+  </div>
+</div>
 
-Webhook failures are often annoying for one reason: the interesting part of the request is already gone by the time your application logs anything useful.
+<div class="home-feature-grid">
+  <div class="home-feature-card">
+    <h2>Capture raw requests</h2>
+    <p>Store the exact payload, headers, and path for later inspection.</p>
+  </div>
+  <div class="home-feature-card">
+    <h2>Explain verification failures</h2>
+    <p>Get specific failure reasons instead of a generic signature mismatch.</p>
+  </div>
+  <div class="home-feature-card">
+    <h2>Replay safely</h2>
+    <p>Resend stored events to a new target after changing your app setup.</p>
+  </div>
+</div>
 
-HookLens sits between the webhook provider and your app. It captures the request, verifies it, stores it locally, and can forward or replay it later.
+<div class="home-providers">
+  <p class="home-providers-label">Current provider support</p>
+  <div class="home-providers-list">
+    <span class="provider-badge provider-stripe">Stripe</span>
+    <span class="provider-badge provider-github">GitHub</span>
+  </div>
+</div>
 
-## Core loop
-
-```bash
-hooklens listen --verify stripe --secret whsec_xxx --forward-to http://localhost:3000/webhook
-hooklens list
-hooklens replay evt_abc123 --to http://localhost:3000/webhook
-```
-
-## Current provider support
-
-- Stripe
-- GitHub
-
-More providers can be added without changing the server or storage layers. The verifier seam is documented in [Adding Providers](/verification/adding-providers).
+<div class="home-cta">
+  <p>
+    Start with <a href="./getting-started">Getting Started</a> for the first capture flow, or jump to
+    <a href="./commands/">Commands</a> for the full CLI reference. More providers can be added without changing the server or
+    storage layers. The verifier seam is documented in
+    <a href="./verification/adding-providers">Adding Providers</a>.
+  </p>
+</div>

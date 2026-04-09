@@ -1,25 +1,24 @@
 :root {
   --vp-c-brand-1: #0f766e;
-  --vp-c-brand-2: #0d9488;
-  --vp-c-brand-3: #14b8a6;
-  --vp-c-brand-soft: rgba(20, 184, 166, 0.16);
+  --vp-c-brand-2: #0a6b63;
+  --vp-c-brand-3: #115e59;
+  --vp-c-brand-soft: #dffaf6;
   --vp-button-brand-border: #0f766e;
   --vp-button-brand-text: #f8fafc;
   --vp-button-brand-bg: #0f766e;
-  --vp-button-brand-hover-border: #0d9488;
+  --vp-button-brand-hover-border: #0a6b63;
   --vp-button-brand-hover-text: #f8fafc;
-  --vp-button-brand-hover-bg: #0d9488;
+  --vp-button-brand-hover-bg: #0a6b63;
   --vp-button-brand-active-border: #115e59;
   --vp-button-brand-active-text: #f8fafc;
   --vp-button-brand-active-bg: #115e59;
-  --vp-button-alt-border: rgba(148, 163, 184, 0.18);
-  --vp-button-alt-text: #e5e7eb;
-  --vp-button-alt-bg: rgba(30, 41, 59, 0.72);
-  --vp-button-alt-hover-border: rgba(148, 163, 184, 0.3);
+  --vp-button-alt-border: #475569;
+  --vp-button-alt-text: #f8fafc;
+  --vp-button-alt-bg: #334155;
+  --vp-button-alt-hover-border: #334155;
   --vp-button-alt-hover-text: #f8fafc;
-  --vp-button-alt-hover-bg: rgba(51, 65, 85, 0.92);
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #0f766e 0%, #f59e0b 100%);
+  --vp-button-alt-hover-bg: #1e293b;
+  --vp-home-hero-name-background: none;
   --vp-home-hero-image-background-image:
     radial-gradient(circle at 30% 30%, rgba(20, 184, 166, 0.28), transparent 42%),
     radial-gradient(circle at 70% 35%, rgba(245, 158, 11, 0.24), transparent 36%),
@@ -31,26 +30,26 @@
   --vp-c-brand-1: #2dd4bf;
   --vp-c-brand-2: #5eead4;
   --vp-c-brand-3: #99f6e4;
-  --vp-c-brand-soft: rgba(45, 212, 191, 0.18);
+  --vp-c-brand-soft: #123734;
   --vp-c-text-1: rgba(248, 250, 252, 0.96);
   --vp-c-text-2: rgba(226, 232, 240, 0.84);
   --vp-c-text-3: rgba(148, 163, 184, 0.88);
   --vp-button-brand-border: #0f766e;
   --vp-button-brand-text: #f8fafc;
   --vp-button-brand-bg: #0f766e;
-  --vp-button-brand-hover-border: #0d9488;
+  --vp-button-brand-hover-border: #0a6b63;
   --vp-button-brand-hover-text: #f8fafc;
-  --vp-button-brand-hover-bg: #0d9488;
+  --vp-button-brand-hover-bg: #0a6b63;
   --vp-button-brand-active-border: #115e59;
   --vp-button-brand-active-text: #f8fafc;
   --vp-button-brand-active-bg: #115e59;
-  --vp-button-alt-border: rgba(148, 163, 184, 0.18);
-  --vp-button-alt-text: #e5e7eb;
-  --vp-button-alt-bg: rgba(30, 41, 59, 0.72);
-  --vp-button-alt-hover-border: rgba(148, 163, 184, 0.3);
+  --vp-button-alt-border: #475569;
+  --vp-button-alt-text: #f8fafc;
+  --vp-button-alt-bg: #1e293b;
+  --vp-button-alt-hover-border: #64748b;
   --vp-button-alt-hover-text: #f8fafc;
-  --vp-button-alt-hover-bg: rgba(51, 65, 85, 0.92);
-  --vp-home-hero-name-background: linear-gradient(120deg, #5eead4 0%, #fbbf24 100%);
+  --vp-button-alt-hover-bg: #334155;
+  --vp-home-hero-name-background: none;
   --vp-home-hero-image-background-image:
     radial-gradient(circle at 28% 30%, rgba(45, 212, 191, 0.24), transparent 42%),
     radial-gradient(circle at 72% 32%, rgba(251, 191, 36, 0.2), transparent 36%),
@@ -65,6 +64,10 @@
   opacity: 1;
 }
 
+.VPHero .name {
+  color: var(--vp-c-brand-1);
+}
+
 .VPHero .tagline {
   color: var(--vp-c-text-2);
   font-size: 1.2rem;
@@ -76,23 +79,158 @@
   font-weight: 600;
 }
 
-.VPFeature .box {
+.home-demo {
+  max-width: 1180px;
+  margin: 1rem auto 2.5rem;
+}
+
+.home-demo-copy {
+  margin: 0 0 1rem;
+  color: var(--vp-c-text-2);
+  font-size: 1.06rem;
+  line-height: 1.75;
+}
+
+.home-demo-frame {
+  overflow: hidden;
   border: 1px solid var(--vp-c-divider);
-  background: var(--vp-c-bg);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.08), transparent 34%),
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 32%),
+    var(--vp-c-bg-soft);
+  padding: 0.85rem;
 }
 
-.dark .VPFeature .box {
+.home-demo-frame img {
+  display: block;
+  width: 100%;
+  border-radius: 18px;
+}
+
+.dark .home-demo-frame {
   border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(17, 24, 39, 0.72);
+  background:
+    radial-gradient(circle at top left, rgba(45, 212, 191, 0.14), transparent 36%),
+    radial-gradient(circle at top right, rgba(251, 191, 36, 0.12), transparent 34%),
+    rgba(15, 23, 42, 0.94);
+  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.3);
 }
 
-.VPFeature .title {
+.home-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 auto 3rem;
+}
+
+.home-feature-card {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 20px;
+  background: var(--vp-c-bg);
+  padding: 1.25rem;
+}
+
+.home-feature-card h2 {
+  margin: 0 0 0.65rem;
   color: var(--vp-c-text-1);
+  font-size: 1.05rem;
+  line-height: 1.35;
 }
 
-.VPFeature .details {
+.home-feature-card p {
+  margin: 0;
   color: var(--vp-c-text-2);
   line-height: 1.65;
+}
+
+.dark .home-feature-card {
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: #111827;
+}
+
+.home-providers {
+  margin: 0 auto 2rem;
+}
+
+.home-providers-label {
+  margin: 0 0 0.75rem;
+  color: var(--vp-c-text-1);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.home-providers-list {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.provider-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.provider-stripe {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.provider-github {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.dark .provider-stripe {
+  border-color: #4338ca;
+  background: #1e1b4b;
+  color: #c7d2fe;
+}
+
+.dark .provider-github {
+  border-color: #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.home-cta {
+  margin: 0 auto 1.5rem;
+}
+
+.home-cta p {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+@media (max-width: 640px) {
+  .home-demo {
+    margin: 0.75rem 0 2rem;
+  }
+
+  .home-demo-frame {
+    padding: 0.55rem;
+    border-radius: 18px;
+  }
+
+  .home-demo-frame img {
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 960px) {
+  .home-feature-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .vp-doc p,
