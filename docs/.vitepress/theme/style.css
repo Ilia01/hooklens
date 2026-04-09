@@ -146,7 +146,7 @@
 
 .dark .home-feature-card {
   border: 1px solid rgba(148, 163, 184, 0.12);
-  background: #111827;
+  background: #161b24;
 }
 
 .home-providers {
@@ -171,22 +171,22 @@
   align-items: center;
   padding: 0.4rem 0.9rem;
   border: 1px solid;
-  border-radius: 9999px;
+  border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 
 .provider-stripe {
-  border-color: #c7d2fe;
-  background: #eef2ff;
-  color: #4338ca;
+  border-color: #d8dcff;
+  background: #f5f6ff;
+  color: #5b53d6;
 }
 
 .provider-github {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
-  color: #334155;
+  border-color: #d9e1ea;
+  background: #f7f9fb;
+  color: #475569;
 }
 
 .dark .provider-stripe {
@@ -215,6 +215,12 @@
 @media (max-width: 640px) {
   .home-demo {
     margin: 0.75rem 0 2rem;
+  }
+
+  .vp-doc div[class*='language-'] {
+    margin-right: 1rem;
+    margin-left: 1rem;
+    border-radius: 16px;
   }
 
   .home-demo-frame {
