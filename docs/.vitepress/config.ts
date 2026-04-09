@@ -4,6 +4,7 @@ export default defineConfig({
   title: 'HookLens',
   description: 'Inspect, verify, and replay webhooks from your terminal.',
   base: '/hooklens/',
+  appearance: 'dark',
   head: [['link', { rel: 'icon', href: '/logo.svg' }]],
   lastUpdated: true,
   cleanUrls: true,
