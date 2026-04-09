@@ -77,6 +77,11 @@
 }
 
 .VPFeature .box {
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+}
+
+.dark .VPFeature .box {
   border: 1px solid rgba(148, 163, 184, 0.12);
   background: rgba(17, 24, 39, 0.72);
 }

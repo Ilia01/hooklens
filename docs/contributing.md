@@ -50,7 +50,7 @@ HookLens is a local development tool and should not silently become network-reac
 
 The forwarding path is protected by:
 
-1. Node's HTTP parser rejecting ambiguous framing before user code runs
+1. Node's default HTTP parser rejecting ambiguous framing before user code runs
 2. full request-body buffering after parser-level dechunking
 3. `fetch()` recomputing outgoing framing
 
