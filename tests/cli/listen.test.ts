@@ -4,44 +4,9 @@ import type { ServerOptions, Server } from '../../src/server/index.js'
 import * as serverModule from '../../src/server/index.js'
 import * as storageModule from '../../src/storage/index.js'
 import type { VerificationResult, WebhookEvent } from '../../src/types.js'
-import type { TerminalUI } from '../../src/ui/terminal.js'
 import { buildVerifier, runListen } from '../../src/cli/listen.js'
 import { defaultDbPath } from '../../src/storage/index.js'
-
-interface FakeStorage {
-  save: ReturnType<typeof vi.fn>
-  load: ReturnType<typeof vi.fn>
-  list: ReturnType<typeof vi.fn>
-  delete: ReturnType<typeof vi.fn>
-  clear: ReturnType<typeof vi.fn>
-  close: ReturnType<typeof vi.fn>
-}
-
-function fakeStorage(): FakeStorage {
-  return {
-    save: vi.fn(),
-    load: vi.fn(),
-    list: vi.fn(() => []),
-    delete: vi.fn(() => false),
-    clear: vi.fn(() => 0),
-    close: vi.fn(),
-  }
-}
-
-function fakeTerminal(): TerminalUI {
-  return {
-    printListenStarted: vi.fn(),
-    printEventCaptured: vi.fn(),
-    printForwardError: vi.fn(),
-    printEventList: vi.fn(),
-    printEventDetail: vi.fn(),
-    printReplayResult: vi.fn(),
-    printDeleted: vi.fn(),
-    printCleared: vi.fn(),
-    printListenStopped: vi.fn(),
-    printError: vi.fn(),
-  }
-}
+import { fakeStorage, fakeTerminal } from '../helpers.js'
 
 function nextTick(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve))
