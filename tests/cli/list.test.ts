@@ -29,6 +29,7 @@ function fakeTerminal(): TerminalUI {
     printEventCaptured: vi.fn(),
     printForwardError: vi.fn(),
     printEventList: vi.fn(),
+    printEventDetail: vi.fn(),
     printReplayResult: vi.fn(),
     printListenStopped: vi.fn(),
     printError: vi.fn(),
@@ -45,6 +46,15 @@ function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
     body: '{}',
     ...overrides,
   }
+}
+
+function fakeStdout(): { write: ReturnType<typeof vi.fn>; written: () => string } {
+  const chunks: string[] = []
+  const write = vi.fn((chunk: string) => {
+    chunks.push(chunk)
+    return true
+  })
+  return { write, written: () => chunks.join('') }
 }
 
 afterEach(() => {
@@ -106,5 +116,54 @@ describe('runList', () => {
     )
 
     expect(storage.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('outputs newline-delimited JSON when --json flag is set', async () => {
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+    const stdout = fakeStdout()
+    const events = [
+      makeEvent({ id: 'evt_a', method: 'POST', path: '/hook' }),
+      makeEvent({ id: 'evt_b', method: 'GET', path: '/ping' }),
+    ]
+
+    storage.list.mockReturnValue(events)
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+
+    await runList({ limit: '2', json: true }, { terminal, stdout })
+
+    expect(terminal.printEventList).not.toHaveBeenCalled()
+
+    const lines = stdout.written().trimEnd().split('\n')
+    expect(lines).toHaveLength(2)
+    expect(JSON.parse(lines[0])).toEqual({
+      id: 'evt_a',
+      timestamp: '2026-04-08T12:00:00.000Z',
+      method: 'POST',
+      path: '/hook',
+    })
+    expect(JSON.parse(lines[1])).toEqual({
+      id: 'evt_b',
+      timestamp: '2026-04-08T12:00:00.000Z',
+      method: 'GET',
+      path: '/ping',
+    })
+    expect(storage.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('outputs nothing when --json is set and there are no events', async () => {
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+    const stdout = fakeStdout()
+
+    storage.list.mockReturnValue([])
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+
+    await runList({ json: true }, { terminal, stdout })
+
+    expect(stdout.write).not.toHaveBeenCalled()
+    expect(terminal.printEventList).not.toHaveBeenCalled()
   })
 })

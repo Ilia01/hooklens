@@ -13,6 +13,7 @@ export interface TerminalUI {
   printEventCaptured(event: WebhookEvent, result: VerificationResult | null): void
   printForwardError(eventId: string, reason: string): void
   printEventList(events: WebhookEvent[]): void
+  printEventDetail(event: WebhookEvent): void
   printReplayResult(result: ReplayResult): void
   printListenStopped(): void
   printError(message: string): void
@@ -69,6 +70,22 @@ export function createTerminal(
         const row = `${chalk.dim(event.timestamp)} ${chalk.cyan(event.method)} ${chalk.bold(event.id)} ${event.path}`
         writeLine(stdout, row)
       }
+    },
+
+    printEventDetail(event) {
+      writeLine(stdout, `${chalk.bold('ID')}        ${event.id}`)
+      writeLine(stdout, `${chalk.bold('Timestamp')} ${event.timestamp}`)
+      writeLine(stdout, `${chalk.bold('Method')}    ${event.method}`)
+      writeLine(stdout, `${chalk.bold('Path')}      ${event.path}`)
+
+      writeLine(stdout, `${chalk.bold('Headers')}`)
+
+      for (const [key, value] of Object.entries(event.headers)) {
+        writeLine(stdout, `  ${chalk.cyan(key)}: ${value}`)
+      }
+
+      writeLine(stdout, `${chalk.bold('Body')}`)
+      writeLine(stdout, `  ${event.body}`)
     },
 
     printReplayResult(result) {

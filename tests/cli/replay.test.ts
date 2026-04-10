@@ -30,6 +30,7 @@ function fakeTerminal(): TerminalUI {
     printEventCaptured: vi.fn(),
     printForwardError: vi.fn(),
     printEventList: vi.fn(),
+    printEventDetail: vi.fn(),
     printReplayResult: vi.fn(),
     printListenStopped: vi.fn(),
     printError: vi.fn(),
@@ -46,6 +47,15 @@ function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
     body: '{"ok":true}',
     ...overrides,
   }
+}
+
+function fakeStdout(): { write: ReturnType<typeof vi.fn>; written: () => string } {
+  const chunks: string[] = []
+  const write = vi.fn((chunk: string) => {
+    chunks.push(chunk)
+    return true
+  })
+  return { write, written: () => chunks.join('') }
 }
 
 afterEach(() => {
@@ -135,6 +145,29 @@ describe('runReplay', () => {
       runReplay('evt_test', { to: 'http://localhost:3000/webhook' }, { terminal: fakeTerminal() }),
     ).rejects.toThrow(/failed to replay/i)
 
+    expect(storage.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('outputs JSON when --json flag is set', async () => {
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+    const stdout = fakeStdout()
+    const event = makeEvent()
+
+    storage.load.mockReturnValue(event)
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+    vi.spyOn(serverModule, 'forwardEvent').mockResolvedValue({
+      status: 200,
+      body: 'ok',
+    })
+
+    await runReplay('evt_test', { json: true }, { terminal, stdout })
+
+    expect(terminal.printReplayResult).not.toHaveBeenCalled()
+
+    const parsed = JSON.parse(stdout.written().trim())
+    expect(parsed).toEqual({ status: 200, body: 'ok' })
     expect(storage.close).toHaveBeenCalledTimes(1)
   })
 })

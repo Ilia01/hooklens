@@ -8,10 +8,12 @@ const DEFAULT_REPLAY_TARGET_URL = 'http://localhost:3000/webhook'
 
 export interface ReplayFlags {
   to?: string
+  json?: boolean
 }
 
 export interface ReplayDeps {
   terminal?: TerminalUI
+  stdout?: { write(data: string): unknown }
 }
 
 function parseTargetUrl(targetUrl: string | undefined): string {
@@ -44,10 +46,15 @@ export async function runReplay(
       const result = await forwardEvent(targetUrl, event)
       const body = result.body.length <= 200 ? result.body : `${result.body.slice(0, 197)}...`
 
-      terminal.printReplayResult({
-        status: result.status,
-        body,
-      })
+      if (flags.json) {
+        const out = deps.stdout ?? process.stdout
+        out.write(JSON.stringify({ status: result.status, body }) + '\n')
+      } else {
+        terminal.printReplayResult({
+          status: result.status,
+          body,
+        })
+      }
     } catch (error) {
       throw new Error(`Failed to replay "${eventId}" to ${targetUrl}: ${errorMessage(error)}`)
     }
@@ -60,12 +67,14 @@ export const replayCommand = new Command('replay')
   .description('Replay a stored webhook event')
   .argument('<event-id>', 'ID of the event to replay')
   .option('--to <url>', 'Target URL to send the event to', DEFAULT_REPLAY_TARGET_URL)
+  .option('--json', 'Output as JSON')
   .addHelpText(
     'after',
     `
 Examples:
   hooklens replay evt_abc123
-  hooklens replay evt_abc123 --to http://localhost:8080/hook`,
+  hooklens replay evt_abc123 --to http://localhost:8080/hook
+  hooklens replay evt_abc123 --json`,
   )
   .action(async (eventId, options) => {
     const terminal = createTerminal()
