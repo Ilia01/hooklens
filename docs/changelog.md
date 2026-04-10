@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.0.0
+
+Released on April 10, 2026.
+
+First stable release.
+
+- `inspect` command to view full event details
+- `delete` and `clear` commands for managing stored events
+- `--json` flag for machine-readable output on `list`, `inspect`, and `replay`
+- forward retry with exponential backoff (`--retry`)
+- cap on forwarded response body size
+- VitePress docs site with demo GIF
+
+Release:
+
+- [GitHub release v1.0.0](https://github.com/Ilia01/hooklens/releases/tag/v1.0.0)
+
 ## v0.2.0
 
 Released on April 9, 2026.

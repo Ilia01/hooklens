@@ -1,6 +1,6 @@
 {
   "name": "hooklens",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "Inspect, verify, and replay webhooks from your terminal",
   "type": "module",
   "bin": {
