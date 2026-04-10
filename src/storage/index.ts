@@ -72,7 +72,6 @@ export function createStorage(dbPath: string) {
   const listAllStmt = db.prepare(`SELECT * FROM events ORDER BY timestamp DESC`)
   const listLimitedStmt = db.prepare(`SELECT * FROM events ORDER BY timestamp DESC LIMIT ?`)
   const deleteStmt = db.prepare(`DELETE FROM events WHERE id = ?`)
-  const countStmt = db.prepare(`SELECT count(*) as count FROM events`)
   const clearStmt = db.prepare(`DELETE FROM events`)
 
   return {
@@ -110,9 +109,8 @@ export function createStorage(dbPath: string) {
     },
 
     clear(): number {
-      const { count } = countStmt.get() as { count: number }
-      clearStmt.run()
-      return count
+      const result = clearStmt.run()
+      return Number(result.changes)
     },
 
     close(): void {
