@@ -1,6 +1,5 @@
 import { Command } from 'commander'
 import { errorMessage } from '../errors.js'
-import { inspectCommand } from './inspect.js'
 import { listenCommand } from './listen.js'
 import { listCommand } from './list.js'
 import { replayCommand } from './replay.js'
@@ -14,7 +13,6 @@ program
 
 program.addCommand(listenCommand)
 program.addCommand(listCommand)
-program.addCommand(inspectCommand)
 program.addCommand(replayCommand)
 
 try {
