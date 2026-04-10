@@ -202,7 +202,11 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError'
 }
 
-async function readResponseBody(response: Response, maxBytes: number): Promise<string> {
+async function readResponseBody(
+  response: Response,
+  maxBytes: number,
+  controller: AbortController,
+): Promise<string> {
   const reader = response.body?.getReader()
   if (!reader) return ''
 
@@ -216,6 +220,7 @@ async function readResponseBody(response: Response, maxBytes: number): Promise<s
       totalBytes += value.byteLength
       if (totalBytes > maxBytes) {
         await reader.cancel()
+        controller.abort()
         throw new Error(`forward response too large: max ${maxBytes} bytes`)
       }
       chunks.push(value)
@@ -253,7 +258,7 @@ export async function forwardEvent(
 
     return {
       status: response.status,
-      body: await readResponseBody(response, maxResponseBytes),
+      body: await readResponseBody(response, maxResponseBytes, controller),
     }
   } catch (error) {
     if (isAbortError(error)) {
