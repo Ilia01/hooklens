@@ -83,6 +83,28 @@ describe('load', () => {
     const loaded = storage.load('evt_doesnt_exist')
     expect(loaded).toBeNull()
   })
+
+  it('round-trips a verification result when present', () => {
+    const verification = {
+      valid: true,
+      provider: 'github',
+      message: 'signature matches',
+      code: 'valid' as const,
+    }
+    storage.save(makeEvent({ verification }))
+
+    const loaded = storage.load('evt_001')
+
+    expect(loaded!.verification).toEqual(verification)
+  })
+
+  it('returns null verification when none was stored', () => {
+    storage.save(makeEvent())
+
+    const loaded = storage.load('evt_001')
+
+    expect(loaded!.verification).toBeNull()
+  })
 })
 
 describe('list', () => {

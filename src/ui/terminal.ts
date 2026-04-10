@@ -13,6 +13,7 @@ export interface TerminalUI {
   printEventCaptured(event: WebhookEvent, result: VerificationResult | null): void
   printForwardError(eventId: string, reason: string): void
   printEventList(events: WebhookEvent[]): void
+  printEventDetail(event: WebhookEvent): void
   printReplayResult(result: ReplayResult): void
   printListenStopped(): void
   printError(message: string): void
@@ -68,6 +69,44 @@ export function createTerminal(
       for (const event of events) {
         const row = `${chalk.dim(event.timestamp)} ${chalk.cyan(event.method)} ${chalk.bold(event.id)} ${event.path}`
         writeLine(stdout, row)
+      }
+    },
+
+    printEventDetail(event) {
+      writeLine(stdout, `${chalk.bold('Event:')}   ${event.id}`)
+      writeLine(stdout, `${chalk.bold('Time:')}    ${event.timestamp}`)
+      writeLine(stdout, `${chalk.bold('Method:')}  ${event.method}`)
+      writeLine(stdout, `${chalk.bold('Path:')}    ${event.path}`)
+
+      if (event.verification) {
+        const v = event.verification
+        const label = v.valid ? chalk.green('PASS') : chalk.red('FAIL')
+        writeLine(stdout, '')
+        writeLine(stdout, chalk.bold('Verification:'))
+        writeLine(stdout, `  Result:   ${label}`)
+        writeLine(stdout, `  Provider: ${v.provider}`)
+        writeLine(stdout, `  Message:  ${v.message}`)
+      }
+
+      writeLine(stdout, '')
+      writeLine(stdout, chalk.bold('Headers:'))
+
+      for (const [key, value] of Object.entries(event.headers)) {
+        writeLine(stdout, `  ${key}: ${value}`)
+      }
+
+      writeLine(stdout, '')
+      writeLine(stdout, chalk.bold('Body:'))
+
+      let bodyText: string
+      try {
+        bodyText = JSON.stringify(JSON.parse(event.body), null, 2)
+      } catch {
+        bodyText = event.body
+      }
+
+      for (const line of bodyText.split('\n')) {
+        writeLine(stdout, `  ${line}`)
       }
     },
 

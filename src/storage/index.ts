@@ -3,7 +3,13 @@ import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import type * as sqlite from 'node:sqlite'
-import { eventRowSchema, webhookEventSchema, type EventRow, type WebhookEvent } from '../types.js'
+import {
+  eventRowSchema,
+  verificationResultSchema,
+  webhookEventSchema,
+  type EventRow,
+  type WebhookEvent,
+} from '../types.js'
 
 const require = createRequire(import.meta.url)
 
@@ -17,6 +23,9 @@ export function defaultDbPath(): string {
 }
 
 function rowToEvent(row: EventRow): WebhookEvent {
+  const verification = row.verification
+    ? verificationResultSchema.parse(JSON.parse(row.verification))
+    : null
   return webhookEventSchema.parse({
     id: row.id,
     timestamp: row.timestamp,
@@ -24,6 +33,7 @@ function rowToEvent(row: EventRow): WebhookEvent {
     path: row.path,
     headers: JSON.parse(row.headers),
     body: row.body,
+    verification,
   })
 }
 
@@ -38,13 +48,24 @@ export function createStorage(dbPath: string) {
       method TEXT NOT NULL,
       path TEXT NOT NULL,
       headers TEXT NOT NULL,
-      body TEXT NOT NULL
+      body TEXT NOT NULL,
+      verification TEXT
     )
   `)
 
+  // Add verification column to existing databases that lack it.
+  try {
+    db.exec(`ALTER TABLE events ADD COLUMN verification TEXT`)
+  } catch (error) {
+    // Re-throw unless the column already exists.
+    if (!(error instanceof Error && /duplicate column/i.test(error.message))) {
+      throw error
+    }
+  }
+
   const insertStmt = db.prepare(
-    `INSERT OR REPLACE INTO events (id, timestamp, method, path, headers, body)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO events (id, timestamp, method, path, headers, body, verification)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
   )
 
   const getStmt = db.prepare(`SELECT * FROM events WHERE id = ?`)
@@ -61,6 +82,7 @@ export function createStorage(dbPath: string) {
         event.path,
         JSON.stringify(event.headers),
         event.body,
+        event.verification ? JSON.stringify(event.verification) : null,
       )
     },
 
