@@ -249,13 +249,32 @@ export async function forwardEvent(
   }
 }
 
+function cancellableDelay(ms: number, req: http.IncomingMessage): Promise<void> {
+  if (ms <= 0) return Promise.resolve()
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms)
+    const onAbort = () => {
+      clearTimeout(timer)
+      resolve()
+    }
+    req.once('close', onAbort)
+    timer.unref()
+  })
+}
+
+function clampRetryCount(value: number | undefined): number {
+  const n = value ?? 0
+  if (!Number.isFinite(n) || !Number.isInteger(n)) return 0
+  return Math.max(0, Math.min(n, 10))
+}
+
 export function createServer(opts: ServerOptions): Server {
   let boundPort = opts.port
   let httpServer: http.Server | null = null
   let isStarting = false
   const maxBodyBytes = opts.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES
   const forwardTimeoutMs = opts.forwardTimeoutMs ?? DEFAULT_FORWARD_TIMEOUT_MS
-  const retryCount = opts.retryCount ?? 0
+  const retryCount = clampRetryCount(opts.retryCount)
   const retryBaseDelayMs = opts.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS
 
   const handleRequest = async (
@@ -285,14 +304,14 @@ export function createServer(opts: ServerOptions): Server {
       return
     }
 
-    let lastError: Error | null = null
+    let lastError: Error = new Error('forward failed')
 
     for (let attempt = 0; attempt <= retryCount; attempt++) {
       if (attempt > 0) {
         const delayMs = retryBaseDelayMs * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt - 1)
-        await new Promise((resolve) => setTimeout(resolve, delayMs))
+        await cancellableDelay(delayMs, req)
         try {
-          opts.onForwardRetry?.(event, attempt, retryCount, lastError!)
+          opts.onForwardRetry?.(event, attempt, retryCount, lastError)
         } catch {
           // Don't let a broken callback affect retries.
         }
@@ -309,12 +328,12 @@ export function createServer(opts: ServerOptions): Server {
     }
 
     try {
-      opts.onForwardError?.(event, lastError!)
+      opts.onForwardError?.(event, lastError)
     } catch {
       // Don't let a broken callback turn a 502 into a 500.
     }
     res.statusCode = 502
-    res.end(`bad gateway: ${lastError!.message}`)
+    res.end(`bad gateway: ${lastError.message}`)
   }
 
   return {

@@ -784,18 +784,11 @@ describe('createServer - retry', () => {
     // Use a raw server so we can destroy the socket on the first request
     // to simulate a connection-level failure that triggers a retry.
     let requestCount = 0
-    const received: TargetRecord[] = []
     const rawServer = http.createServer((req, res) => {
       const chunks: Buffer[] = []
       req.on('data', (c: Buffer) => chunks.push(c))
       req.on('end', () => {
         requestCount++
-        received.push({
-          method: req.method ?? '',
-          path: req.url ?? '',
-          headers: req.headers,
-          body: Buffer.concat(chunks).toString('utf8'),
-        })
         if (requestCount === 1) {
           // Destroy the socket to simulate a connection-level failure
           req.socket.destroy()
@@ -806,28 +799,31 @@ describe('createServer - retry', () => {
       })
     })
     await new Promise<void>((resolve) => rawServer.listen(0, '127.0.0.1', () => resolve()))
-    const rawAddr = rawServer.address()
-    if (!rawAddr || typeof rawAddr === 'string') throw new Error('raw server bad addr')
-    const rawUrl = `http://127.0.0.1:${rawAddr.port}`
 
-    const onForwardRetry =
-      vi.fn<(e: WebhookEvent, attempt: number, max: number, err: Error) => void>()
+    try {
+      const rawAddr = rawServer.address()
+      if (!rawAddr || typeof rawAddr === 'string') throw new Error('raw server bad addr')
+      const rawUrl = `http://127.0.0.1:${rawAddr.port}`
 
-    const fx = await hookLens({
-      forwardTo: rawUrl,
-      retryCount: 2,
-      retryBaseDelayMs: 0,
-      onForwardRetry,
-    })
+      const onForwardRetry =
+        vi.fn<(e: WebhookEvent, attempt: number, max: number, err: Error) => void>()
 
-    const res = await postRaw(`${fx.url}/`, '{"test":true}')
+      const fx = await hookLens({
+        forwardTo: rawUrl,
+        retryCount: 2,
+        retryBaseDelayMs: 0,
+        onForwardRetry,
+      })
 
-    expect(res.status).toBe(200)
-    expect(res.body).toBe('recovered')
-    expect(onForwardRetry).toHaveBeenCalledTimes(1)
-    expect(requestCount).toBe(2)
+      const res = await postRaw(`${fx.url}/`, '{"test":true}')
 
-    await new Promise<void>((resolve) => rawServer.close(() => resolve()))
+      expect(res.status).toBe(200)
+      expect(res.body).toBe('recovered')
+      expect(onForwardRetry).toHaveBeenCalledTimes(1)
+      expect(requestCount).toBe(2)
+    } finally {
+      await new Promise<void>((resolve) => rawServer.close(() => resolve()))
+    }
   })
 
   it('does not retry when retryCount is 0', async () => {
