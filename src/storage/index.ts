@@ -71,6 +71,7 @@ export function createStorage(dbPath: string) {
   const getStmt = db.prepare(`SELECT * FROM events WHERE id = ?`)
   const listAllStmt = db.prepare(`SELECT * FROM events ORDER BY timestamp DESC`)
   const listLimitedStmt = db.prepare(`SELECT * FROM events ORDER BY timestamp DESC LIMIT ?`)
+  const deleteStmt = db.prepare(`DELETE FROM events WHERE id = ?`)
   const clearStmt = db.prepare(`DELETE FROM events`)
 
   return {
@@ -102,8 +103,14 @@ export function createStorage(dbPath: string) {
       return rows.map(rowToEvent)
     },
 
-    clear(): void {
-      clearStmt.run()
+    delete(id: string): boolean {
+      const result = deleteStmt.run(id)
+      return result.changes > 0
+    },
+
+    clear(): number {
+      const result = clearStmt.run()
+      return Number(result.changes)
     },
 
     close(): void {

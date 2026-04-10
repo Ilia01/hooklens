@@ -15,6 +15,8 @@ export interface TerminalUI {
   printEventList(events: WebhookEvent[]): void
   printEventDetail(event: WebhookEvent): void
   printReplayResult(result: ReplayResult): void
+  printDeleted(eventId: string): void
+  printCleared(count: number): void
   printListenStopped(): void
   printError(message: string): void
 }
@@ -119,6 +121,14 @@ export function createTerminal(
       }
 
       writeLine(stdout, `${summary} ${result.body}`)
+    },
+
+    printDeleted(eventId) {
+      writeLine(stdout, `Deleted ${chalk.bold(eventId)}`)
+    },
+
+    printCleared(count) {
+      writeLine(stdout, `Cleared ${chalk.bold(String(count))} events`)
     },
 
     printListenStopped() {

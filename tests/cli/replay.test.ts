@@ -5,38 +5,7 @@ import * as serverModule from '../../src/server/index.js'
 import * as storageModule from '../../src/storage/index.js'
 import { defaultDbPath } from '../../src/storage/index.js'
 import type { WebhookEvent } from '../../src/types.js'
-import type { TerminalUI } from '../../src/ui/terminal.js'
-
-interface FakeStorage {
-  save: ReturnType<typeof vi.fn>
-  load: ReturnType<typeof vi.fn>
-  list: ReturnType<typeof vi.fn>
-  clear: ReturnType<typeof vi.fn>
-  close: ReturnType<typeof vi.fn>
-}
-
-function fakeStorage(): FakeStorage {
-  return {
-    save: vi.fn(),
-    load: vi.fn(),
-    list: vi.fn(() => []),
-    clear: vi.fn(),
-    close: vi.fn(),
-  }
-}
-
-function fakeTerminal(): TerminalUI {
-  return {
-    printListenStarted: vi.fn(),
-    printEventCaptured: vi.fn(),
-    printForwardError: vi.fn(),
-    printEventList: vi.fn(),
-    printEventDetail: vi.fn(),
-    printReplayResult: vi.fn(),
-    printListenStopped: vi.fn(),
-    printError: vi.fn(),
-  }
-}
+import { fakeStorage, fakeTerminal } from '../helpers.js'
 
 function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
   return {

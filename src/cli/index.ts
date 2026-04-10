@@ -1,5 +1,7 @@
 import { Command } from 'commander'
 import { errorMessage } from '../errors.js'
+import { clearCommand } from './clear.js'
+import { deleteCommand } from './delete.js'
 import { inspectCommand } from './inspect.js'
 import { listenCommand } from './listen.js'
 import { listCommand } from './list.js'
@@ -16,6 +18,8 @@ program.addCommand(listenCommand)
 program.addCommand(listCommand)
 program.addCommand(inspectCommand)
 program.addCommand(replayCommand)
+program.addCommand(deleteCommand)
+program.addCommand(clearCommand)
 
 try {
   await program.parseAsync(process.argv)
