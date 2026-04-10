@@ -11,7 +11,7 @@ export interface ListFlags {
 
 export interface ListDeps {
   terminal?: TerminalUI
-  stdout?: NodeJS.WriteStream
+  stdout?: NodeJS.WritableStream
 }
 
 function parseLimit(limit: string | number | undefined): number {

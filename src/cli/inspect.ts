@@ -10,7 +10,7 @@ export interface InspectFlags {
 
 export interface InspectDeps {
   terminal?: TerminalUI
-  stdout?: NodeJS.WriteStream
+  stdout?: NodeJS.WritableStream
 }
 
 export async function runInspect(

@@ -1,3 +1,3 @@
-export function writeJsonLine(stdout: NodeJS.WriteStream, data: unknown): void {
+export function writeJsonLine(stdout: NodeJS.WritableStream, data: unknown): void {
   stdout.write(JSON.stringify(data) + '\n')
 }

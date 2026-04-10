@@ -49,7 +49,7 @@ function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
   }
 }
 
-function fakeStdout(): { stream: NodeJS.WriteStream; written: () => string } {
+function fakeStdout(): { stream: NodeJS.WritableStream; written: () => string } {
   const chunks: string[] = []
   const stream = new Writable({
     write(chunk, _encoding, callback) {
@@ -57,7 +57,7 @@ function fakeStdout(): { stream: NodeJS.WriteStream; written: () => string } {
       callback()
     },
   })
-  return { stream: stream as NodeJS.WriteStream, written: () => chunks.join('') }
+  return { stream, written: () => chunks.join('') }
 }
 
 afterEach(() => {

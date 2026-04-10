@@ -14,7 +14,7 @@ export interface ReplayFlags {
 
 export interface ReplayDeps {
   terminal?: TerminalUI
-  stdout?: NodeJS.WriteStream
+  stdout?: NodeJS.WritableStream
 }
 
 function parseTargetUrl(targetUrl: string | undefined): string {
@@ -45,12 +45,12 @@ export async function runReplay(
 
     try {
       const result = await forwardEvent(targetUrl, event)
-      const body = result.body.length <= 200 ? result.body : `${result.body.slice(0, 197)}...`
 
       if (flags.json) {
         const out = deps.stdout ?? process.stdout
-        writeJsonLine(out, { status: result.status, body })
+        writeJsonLine(out, { status: result.status, body: result.body })
       } else {
+        const body = result.body.length <= 200 ? result.body : `${result.body.slice(0, 197)}...`
         terminal.printReplayResult({
           status: result.status,
           body,
