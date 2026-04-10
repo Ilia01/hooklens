@@ -45,6 +45,7 @@ const FORWARD_STRIP = new Set([
 const DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 const DEFAULT_FORWARD_TIMEOUT_MS = 5000
 const DEFAULT_RETRY_BASE_DELAY_MS = 100
+const RETRY_BACKOFF_MULTIPLIER = 4
 
 function forwardedStripSet(headers: Record<string, string>): Set<string> {
   const strip = new Set(FORWARD_STRIP)
@@ -288,7 +289,7 @@ export function createServer(opts: ServerOptions): Server {
 
     for (let attempt = 0; attempt <= retryCount; attempt++) {
       if (attempt > 0) {
-        const delayMs = retryBaseDelayMs * Math.pow(4, attempt - 1)
+        const delayMs = retryBaseDelayMs * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt - 1)
         await new Promise((resolve) => setTimeout(resolve, delayMs))
         try {
           opts.onForwardRetry?.(event, attempt, retryCount, lastError!)

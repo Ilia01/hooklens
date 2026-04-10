@@ -407,6 +407,7 @@ describe('runListen', () => {
 
     await expect(runListen({ port: '4400', retry: '-1' })).rejects.toThrow(/invalid retry/i)
     await expect(runListen({ port: '4400', retry: 'abc' })).rejects.toThrow(/invalid retry/i)
+    await expect(runListen({ port: '4400', retry: '11' })).rejects.toThrow(/invalid retry/i)
 
     expect(createStorageMock).not.toHaveBeenCalled()
     expect(createServerMock).not.toHaveBeenCalled()

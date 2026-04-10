@@ -40,8 +40,8 @@ function parseRetryCount(retry: string | number | undefined): number {
   if (retry === undefined) return 0
   const parsed = typeof retry === 'number' ? retry : Number(retry)
 
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new Error(`Invalid retry count "${retry}". Expected a non-negative integer.`)
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 10) {
+    throw new Error(`Invalid retry count "${retry}". Expected an integer between 0 and 10.`)
   }
 
   return parsed
