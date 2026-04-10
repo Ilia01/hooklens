@@ -37,12 +37,13 @@ Storage uses the built-in `node:sqlite` module and writes to:
 ~/.hooklens/events.db
 ```
 
-The storage layer exposes five operations:
+The storage layer exposes six operations:
 
 - `save(event)`
 - `load(id)`
 - `list(limit?)`
-- `clear()`
+- `delete(id)` removes a single event, returns whether it existed
+- `clear()` removes all events, returns the count deleted
 - `close()` closes the SQLite handle during shutdown and cleanup
 
 ## Verifier seam

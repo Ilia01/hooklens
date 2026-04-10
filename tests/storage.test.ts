@@ -184,13 +184,36 @@ describe('corruption', () => {
 })
 
 describe('clear', () => {
-  it('removes all stored events', () => {
+  it('removes all stored events and returns the count', () => {
     storage.save(makeEvent({ id: 'evt_1' }))
     storage.save(makeEvent({ id: 'evt_2' }))
 
-    storage.clear()
+    const count = storage.clear()
 
-    const events = storage.list()
-    expect(events).toEqual([])
+    expect(count).toBe(2)
+    expect(storage.list()).toEqual([])
+  })
+
+  it('returns zero when there are no events', () => {
+    const count = storage.clear()
+    expect(count).toBe(0)
+  })
+})
+
+describe('delete', () => {
+  it('deletes an existing event and returns true', () => {
+    storage.save(makeEvent({ id: 'evt_1' }))
+    storage.save(makeEvent({ id: 'evt_2' }))
+
+    const result = storage.delete('evt_1')
+
+    expect(result).toBe(true)
+    expect(storage.load('evt_1')).toBeNull()
+    expect(storage.load('evt_2')).not.toBeNull()
+  })
+
+  it('returns false when the event does not exist', () => {
+    const result = storage.delete('evt_nonexistent')
+    expect(result).toBe(false)
   })
 })

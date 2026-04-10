@@ -11,6 +11,7 @@ interface FakeStorage {
   save: ReturnType<typeof vi.fn>
   load: ReturnType<typeof vi.fn>
   list: ReturnType<typeof vi.fn>
+  delete: ReturnType<typeof vi.fn>
   clear: ReturnType<typeof vi.fn>
   close: ReturnType<typeof vi.fn>
 }
@@ -20,7 +21,8 @@ function fakeStorage(): FakeStorage {
     save: vi.fn(),
     load: vi.fn(),
     list: vi.fn(() => []),
-    clear: vi.fn(),
+    delete: vi.fn(() => false),
+    clear: vi.fn(() => 0),
     close: vi.fn(),
   }
 }
@@ -33,6 +35,8 @@ function fakeTerminal(): TerminalUI {
     printEventList: vi.fn(),
     printEventDetail: vi.fn(),
     printReplayResult: vi.fn(),
+    printDeleted: vi.fn(),
+    printCleared: vi.fn(),
     printListenStopped: vi.fn(),
     printError: vi.fn(),
   }
