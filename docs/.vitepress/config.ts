@@ -35,6 +35,8 @@ export default defineConfig({
           { text: 'listen', link: '/commands/listen' },
           { text: 'list', link: '/commands/list' },
           { text: 'replay', link: '/commands/replay' },
+          { text: 'delete', link: '/commands/delete' },
+          { text: 'clear', link: '/commands/clear' },
         ],
       },
       {
