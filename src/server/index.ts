@@ -12,9 +12,12 @@ export interface ServerOptions {
   verifier?: Verifier
   forwardTo?: string
   forwardTimeoutMs?: number
+  retryCount?: number
+  retryBaseDelayMs?: number
   maxBodyBytes?: number
   onEvent?: (event: WebhookEvent, result: VerificationResult | null) => void
   onForwardError?: (event: WebhookEvent, error: Error) => void
+  onForwardRetry?: (event: WebhookEvent, attempt: number, maxRetries: number, error: Error) => void
 }
 
 export interface Server {
@@ -41,6 +44,7 @@ const FORWARD_STRIP = new Set([
 
 const DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 const DEFAULT_FORWARD_TIMEOUT_MS = 5000
+const DEFAULT_RETRY_BASE_DELAY_MS = 100
 
 function forwardedStripSet(headers: Record<string, string>): Set<string> {
   const strip = new Set(FORWARD_STRIP)
@@ -250,6 +254,8 @@ export function createServer(opts: ServerOptions): Server {
   let isStarting = false
   const maxBodyBytes = opts.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES
   const forwardTimeoutMs = opts.forwardTimeoutMs ?? DEFAULT_FORWARD_TIMEOUT_MS
+  const retryCount = opts.retryCount ?? 0
+  const retryBaseDelayMs = opts.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS
 
   const handleRequest = async (
     req: http.IncomingMessage,
@@ -278,20 +284,36 @@ export function createServer(opts: ServerOptions): Server {
       return
     }
 
-    try {
-      const forwarded = await forwardEvent(opts.forwardTo, event, forwardTimeoutMs)
-      res.statusCode = forwarded.status
-      res.end(forwarded.body)
-    } catch (error) {
-      const err = toError(error)
-      try {
-        opts.onForwardError?.(event, err)
-      } catch {
-        // Don't let a broken callback turn a 502 into a 500.
+    let lastError: Error | null = null
+
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
+      if (attempt > 0) {
+        const delayMs = retryBaseDelayMs * Math.pow(4, attempt - 1)
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+        try {
+          opts.onForwardRetry?.(event, attempt, retryCount, lastError!)
+        } catch {
+          // Don't let a broken callback affect retries.
+        }
       }
-      res.statusCode = 502
-      res.end(`bad gateway: ${err.message}`)
+
+      try {
+        const forwarded = await forwardEvent(opts.forwardTo, event, forwardTimeoutMs)
+        res.statusCode = forwarded.status
+        res.end(forwarded.body)
+        return
+      } catch (error) {
+        lastError = toError(error)
+      }
     }
+
+    try {
+      opts.onForwardError?.(event, lastError!)
+    } catch {
+      // Don't let a broken callback turn a 502 into a 500.
+    }
+    res.statusCode = 502
+    res.end(`bad gateway: ${lastError!.message}`)
   }
 
   return {

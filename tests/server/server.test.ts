@@ -753,3 +753,134 @@ describe('headersForForwarding', () => {
     expect(out['connection']).toBeUndefined()
   })
 })
+
+describe('createServer - retry', () => {
+  it('retries on connection error and eventually returns 502', async () => {
+    const onForwardError = vi.fn<(e: WebhookEvent, err: Error) => void>()
+    const onForwardRetry =
+      vi.fn<(e: WebhookEvent, attempt: number, max: number, err: Error) => void>()
+
+    const fx = await hookLens({
+      forwardTo: 'http://127.0.0.1:1',
+      retryCount: 2,
+      retryBaseDelayMs: 0,
+      onForwardError,
+      onForwardRetry,
+    })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(502)
+    expect(res.body).toMatch(/^bad gateway: /)
+    expect(onForwardRetry).toHaveBeenCalledTimes(2)
+    expect(onForwardRetry.mock.calls[0][1]).toBe(1)
+    expect(onForwardRetry.mock.calls[0][2]).toBe(2)
+    expect(onForwardRetry.mock.calls[1][1]).toBe(2)
+    expect(onForwardRetry.mock.calls[1][2]).toBe(2)
+    expect(onForwardError).toHaveBeenCalledTimes(1)
+  })
+
+  it('succeeds on a later retry when the target recovers', async () => {
+    // Use a raw server so we can destroy the socket on the first request
+    // to simulate a connection-level failure that triggers a retry.
+    let requestCount = 0
+    const received: TargetRecord[] = []
+    const rawServer = http.createServer((req, res) => {
+      const chunks: Buffer[] = []
+      req.on('data', (c: Buffer) => chunks.push(c))
+      req.on('end', () => {
+        requestCount++
+        received.push({
+          method: req.method ?? '',
+          path: req.url ?? '',
+          headers: req.headers,
+          body: Buffer.concat(chunks).toString('utf8'),
+        })
+        if (requestCount === 1) {
+          // Destroy the socket to simulate a connection-level failure
+          req.socket.destroy()
+          return
+        }
+        res.statusCode = 200
+        res.end('recovered')
+      })
+    })
+    await new Promise<void>((resolve) => rawServer.listen(0, '127.0.0.1', () => resolve()))
+    const rawAddr = rawServer.address()
+    if (!rawAddr || typeof rawAddr === 'string') throw new Error('raw server bad addr')
+    const rawUrl = `http://127.0.0.1:${rawAddr.port}`
+
+    const onForwardRetry =
+      vi.fn<(e: WebhookEvent, attempt: number, max: number, err: Error) => void>()
+
+    const fx = await hookLens({
+      forwardTo: rawUrl,
+      retryCount: 2,
+      retryBaseDelayMs: 0,
+      onForwardRetry,
+    })
+
+    const res = await postRaw(`${fx.url}/`, '{"test":true}')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toBe('recovered')
+    expect(onForwardRetry).toHaveBeenCalledTimes(1)
+    expect(requestCount).toBe(2)
+
+    await new Promise<void>((resolve) => rawServer.close(() => resolve()))
+  })
+
+  it('does not retry when retryCount is 0', async () => {
+    const onForwardRetry =
+      vi.fn<(e: WebhookEvent, attempt: number, max: number, err: Error) => void>()
+
+    const fx = await hookLens({
+      forwardTo: 'http://127.0.0.1:1',
+      retryCount: 0,
+      onForwardRetry,
+    })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(502)
+    expect(onForwardRetry).not.toHaveBeenCalled()
+  })
+
+  it('does not retry on 4xx/5xx responses (those are real responses)', async () => {
+    const onForwardRetry =
+      vi.fn<(e: WebhookEvent, attempt: number, max: number, err: Error) => void>()
+    const downstream = await target(() => ({ status: 500, body: 'internal error' }))
+
+    const fx = await hookLens({
+      forwardTo: downstream.url,
+      retryCount: 3,
+      retryBaseDelayMs: 0,
+      onForwardRetry,
+    })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(500)
+    expect(res.body).toBe('internal error')
+    expect(onForwardRetry).not.toHaveBeenCalled()
+    expect(downstream.received).toHaveLength(1)
+  })
+
+  it('isolates a broken onForwardRetry callback', async () => {
+    const onForwardRetry = vi.fn(() => {
+      throw new Error('callback exploded')
+    })
+
+    const fx = await hookLens({
+      forwardTo: 'http://127.0.0.1:1',
+      retryCount: 1,
+      retryBaseDelayMs: 0,
+      onForwardRetry,
+    })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(502)
+    expect(onForwardRetry).toHaveBeenCalledTimes(1)
+  })
+})

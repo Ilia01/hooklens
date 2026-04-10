@@ -12,6 +12,7 @@ export interface ListenFlags {
   verify?: string
   secret?: string
   forwardTo?: string
+  retry?: string | number
 }
 
 export interface SignalBus {
@@ -30,6 +31,17 @@ function parsePort(port: string | number | undefined): number {
 
   if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65_535) {
     throw new Error(`Invalid port "${raw}". Expected an integer between 0 and 65535.`)
+  }
+
+  return parsed
+}
+
+function parseRetryCount(retry: string | number | undefined): number {
+  if (retry === undefined) return 0
+  const parsed = typeof retry === 'number' ? retry : Number(retry)
+
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`Invalid retry count "${retry}". Expected a non-negative integer.`)
   }
 
   return parsed
@@ -76,6 +88,7 @@ function printEventCapturedBestEffort(
 
 export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Promise<void> {
   const port = parsePort(flags.port)
+  const retryCount = parseRetryCount(flags.retry)
   const verifier = buildVerifier(flags)
   const dbPath = defaultDbPath()
   const signals = deps.signals ?? process
@@ -134,8 +147,11 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
       storage,
       verifier,
       forwardTo: flags.forwardTo,
+      retryCount,
       onEvent: (event, result) => printEventCapturedBestEffort(terminal, event, result),
       onForwardError: (event, error) => terminal.printForwardError(event.id, error.message),
+      onForwardRetry: (event, attempt, maxRetries, error) =>
+        terminal.printForwardRetry(event.id, attempt, maxRetries, error.message),
     })
 
     signals.on('SIGINT', onSignal)
@@ -172,6 +188,7 @@ export const listenCommand = new Command('listen')
   .option('--verify <provider>', 'Verify signatures (stripe, github)')
   .option('--secret <secret>', 'Webhook signing secret')
   .option('--forward-to <url>', 'Forward received webhooks to this URL')
+  .option('--retry <count>', 'Retry failed forwards with exponential backoff', '0')
   .addHelpText(
     'after',
     `
@@ -179,7 +196,8 @@ Examples:
   hooklens listen
   hooklens listen -p 8080 --forward-to http://localhost:3000/webhook
   hooklens listen --verify stripe --secret whsec_xxx
-  hooklens listen --verify github --secret ghsecret_xxx`,
+  hooklens listen --verify github --secret ghsecret_xxx
+  hooklens listen --forward-to http://localhost:3000/webhook --retry 3`,
   )
   .action(async (options) => {
     const terminal = createTerminal()

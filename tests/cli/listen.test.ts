@@ -31,6 +31,7 @@ function fakeTerminal(): TerminalUI {
     printListenStarted: vi.fn(),
     printEventCaptured: vi.fn(),
     printForwardError: vi.fn(),
+    printForwardRetry: vi.fn(),
     printEventList: vi.fn(),
     printEventDetail: vi.fn(),
     printReplayResult: vi.fn(),
@@ -339,5 +340,75 @@ describe('runListen', () => {
 
     expect(server.stop).toHaveBeenCalledTimes(1)
     expect(storage.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes retryCount to createServer when --retry is set', async () => {
+    const signals = new EventEmitter()
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+
+    let capturedOptions: ServerOptions | undefined
+
+    const server: Server = {
+      port: 4400,
+      start: vi.fn(async () => {}),
+      stop: vi.fn(async () => {}),
+    }
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+    vi.spyOn(serverModule, 'createServer').mockImplementation((opts: ServerOptions) => {
+      capturedOptions = opts
+      return server
+    })
+
+    const running = runListen({ port: '4400', retry: '3' }, { signals: signals as never, terminal })
+
+    await nextTick()
+
+    expect(capturedOptions?.retryCount).toBe(3)
+    expect(typeof capturedOptions?.onForwardRetry).toBe('function')
+
+    signals.emit('SIGINT')
+    await running
+  })
+
+  it('defaults retryCount to 0 when --retry is not set', async () => {
+    const signals = new EventEmitter()
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+
+    let capturedOptions: ServerOptions | undefined
+
+    const server: Server = {
+      port: 4400,
+      start: vi.fn(async () => {}),
+      stop: vi.fn(async () => {}),
+    }
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+    vi.spyOn(serverModule, 'createServer').mockImplementation((opts: ServerOptions) => {
+      capturedOptions = opts
+      return server
+    })
+
+    const running = runListen({ port: '4400' }, { signals: signals as never, terminal })
+
+    await nextTick()
+
+    expect(capturedOptions?.retryCount).toBe(0)
+
+    signals.emit('SIGINT')
+    await running
+  })
+
+  it('rejects invalid retry values before creating runtime dependencies', async () => {
+    const createStorageMock = vi.spyOn(storageModule, 'createStorage')
+    const createServerMock = vi.spyOn(serverModule, 'createServer')
+
+    await expect(runListen({ port: '4400', retry: '-1' })).rejects.toThrow(/invalid retry/i)
+    await expect(runListen({ port: '4400', retry: 'abc' })).rejects.toThrow(/invalid retry/i)
+
+    expect(createStorageMock).not.toHaveBeenCalled()
+    expect(createServerMock).not.toHaveBeenCalled()
   })
 })
