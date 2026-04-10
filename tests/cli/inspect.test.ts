@@ -117,6 +117,29 @@ describe('runInspect', () => {
     expect(storage.close).toHaveBeenCalledTimes(1)
   })
 
+  it('outputs JSON with verification when --json flag is set', async () => {
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+    const stdout = fakeStdout()
+    const verification = {
+      valid: true,
+      provider: 'github',
+      message: 'signature matches',
+      code: 'valid' as const,
+    }
+    const event = makeEvent({ verification })
+
+    storage.load.mockReturnValue(event)
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+
+    await runInspect('evt_test', { json: true }, { terminal, stdout: stdout.stream })
+
+    const parsed = JSON.parse(stdout.written().trim())
+    expect(parsed.verification).toEqual(verification)
+    expect(storage.close).toHaveBeenCalledTimes(1)
+  })
+
   it('closes storage when load throws', async () => {
     const storage = fakeStorage()
 

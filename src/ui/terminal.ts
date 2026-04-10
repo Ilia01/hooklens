@@ -77,6 +77,17 @@ export function createTerminal(
       writeLine(stdout, `${chalk.bold('Time:')}    ${event.timestamp}`)
       writeLine(stdout, `${chalk.bold('Method:')}  ${event.method}`)
       writeLine(stdout, `${chalk.bold('Path:')}    ${event.path}`)
+
+      if (event.verification) {
+        const v = event.verification
+        const label = v.valid ? chalk.green('PASS') : chalk.red('FAIL')
+        writeLine(stdout, '')
+        writeLine(stdout, chalk.bold('Verification:'))
+        writeLine(stdout, `  Result:   ${label}`)
+        writeLine(stdout, `  Provider: ${v.provider}`)
+        writeLine(stdout, `  Message:  ${v.message}`)
+      }
+
       writeLine(stdout, '')
       writeLine(stdout, chalk.bold('Headers:'))
 
