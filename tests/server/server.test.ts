@@ -673,6 +673,27 @@ describe('createServer - forwarding', () => {
     expect(downstream.received).toHaveLength(0)
     expect(fx.storage.list()).toHaveLength(0)
   })
+
+  it('returns 502 when the forward response body exceeds maxForwardResponseBytes', async () => {
+    const largeBody = 'x'.repeat(64)
+    const downstream = await target(() => ({ status: 200, body: largeBody }))
+    const fx = await hookLens({ forwardTo: downstream.url, maxForwardResponseBytes: 32 })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(502)
+    expect(res.body).toMatch(/^bad gateway: forward response too large/)
+  })
+
+  it('allows forward responses within maxForwardResponseBytes', async () => {
+    const downstream = await target(() => ({ status: 200, body: 'short' }))
+    const fx = await hookLens({ forwardTo: downstream.url, maxForwardResponseBytes: 32 })
+
+    const res = await postRaw(`${fx.url}/`, '{}')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toBe('short')
+  })
 })
 
 describe('headersForForwarding', () => {

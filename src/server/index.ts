@@ -13,6 +13,7 @@ export interface ServerOptions {
   forwardTo?: string
   forwardTimeoutMs?: number
   maxBodyBytes?: number
+  maxForwardResponseBytes?: number
   onEvent?: (event: WebhookEvent, result: VerificationResult | null) => void
   onForwardError?: (event: WebhookEvent, error: Error) => void
 }
@@ -201,10 +202,35 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError'
 }
 
+async function readResponseBody(response: Response, maxBytes: number): Promise<string> {
+  const reader = response.body?.getReader()
+  if (!reader) return ''
+
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalBytes += value.byteLength
+      if (totalBytes > maxBytes) {
+        throw new Error(`forward response too large: max ${maxBytes} bytes`)
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  return Buffer.concat(chunks, totalBytes).toString('utf8')
+}
+
 export async function forwardEvent(
   targetUrl: string,
   event: WebhookEvent,
   timeoutMs = DEFAULT_FORWARD_TIMEOUT_MS,
+  maxResponseBytes = DEFAULT_MAX_BODY_BYTES,
 ): Promise<ReplayResult> {
   const target = new URL(targetUrl)
   const destination = new URL(target.href)
@@ -226,7 +252,7 @@ export async function forwardEvent(
 
     return {
       status: response.status,
-      body: await response.text(),
+      body: await readResponseBody(response, maxResponseBytes),
     }
   } catch (error) {
     if (isAbortError(error)) {
@@ -249,6 +275,7 @@ export function createServer(opts: ServerOptions): Server {
   let httpServer: http.Server | null = null
   let isStarting = false
   const maxBodyBytes = opts.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES
+  const maxForwardResponseBytes = opts.maxForwardResponseBytes ?? DEFAULT_MAX_BODY_BYTES
   const forwardTimeoutMs = opts.forwardTimeoutMs ?? DEFAULT_FORWARD_TIMEOUT_MS
 
   const handleRequest = async (
@@ -279,7 +306,12 @@ export function createServer(opts: ServerOptions): Server {
     }
 
     try {
-      const forwarded = await forwardEvent(opts.forwardTo, event, forwardTimeoutMs)
+      const forwarded = await forwardEvent(
+        opts.forwardTo,
+        event,
+        forwardTimeoutMs,
+        maxForwardResponseBytes,
+      )
       res.statusCode = forwarded.status
       res.end(forwarded.body)
     } catch (error) {
