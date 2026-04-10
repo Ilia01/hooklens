@@ -12,6 +12,7 @@ export interface TerminalUI {
   printListenStarted(info: ListenStartedInfo): void
   printEventCaptured(event: WebhookEvent, result: VerificationResult | null): void
   printForwardError(eventId: string, reason: string): void
+  printForwardRetry(eventId: string, attempt: number, maxRetries: number, reason: string): void
   printEventList(events: WebhookEvent[]): void
   printEventDetail(event: WebhookEvent): void
   printReplayResult(result: ReplayResult): void
@@ -60,6 +61,13 @@ export function createTerminal(
 
     printForwardError(eventId, reason) {
       writeLine(stdout, `${chalk.red('FWD')} ${chalk.bold(eventId)} ${reason}`)
+    },
+
+    printForwardRetry(eventId, attempt, maxRetries, reason) {
+      writeLine(
+        stdout,
+        `${chalk.yellow('RETRY')} ${chalk.bold(eventId)} attempt ${attempt}/${maxRetries} ${reason}`,
+      )
     },
 
     printEventList(events) {

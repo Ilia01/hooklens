@@ -16,6 +16,7 @@ hooklens listen [options]
 | `--verify <provider>` | none    | Enable signature verification for `stripe` or `github` |
 | `--secret <secret>`   | none    | Provider signing secret                                |
 | `--forward-to <url>`  | none    | Forward captured requests to a downstream URL          |
+| `--retry <count>`     | `0`     | Retry failed forwards with exponential backoff         |
 
 ## Examples
 
@@ -59,6 +60,8 @@ Per-event output includes:
 - `FAIL` with the verification message if it does not
 
 Forwarding failures are printed separately with an `FWD` prefix.
+
+Retry attempts (when `--retry` is set) are printed with a `RETRY` prefix, showing the attempt number and reason.
 
 ## Notes
 

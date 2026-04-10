@@ -12,9 +12,12 @@ export interface ServerOptions {
   verifier?: Verifier
   forwardTo?: string
   forwardTimeoutMs?: number
+  retryCount?: number
+  retryBaseDelayMs?: number
   maxBodyBytes?: number
   onEvent?: (event: WebhookEvent, result: VerificationResult | null) => void
   onForwardError?: (event: WebhookEvent, error: Error) => void
+  onForwardRetry?: (event: WebhookEvent, attempt: number, maxRetries: number, error: Error) => void
 }
 
 export interface Server {
@@ -41,6 +44,8 @@ const FORWARD_STRIP = new Set([
 
 const DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 const DEFAULT_FORWARD_TIMEOUT_MS = 5000
+const DEFAULT_RETRY_BASE_DELAY_MS = 100
+const RETRY_BACKOFF_MULTIPLIER = 4
 
 function forwardedStripSet(headers: Record<string, string>): Set<string> {
   const strip = new Set(FORWARD_STRIP)
@@ -244,12 +249,33 @@ export async function forwardEvent(
   }
 }
 
+function cancellableDelay(ms: number, req: http.IncomingMessage): Promise<void> {
+  if (ms <= 0) return Promise.resolve()
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms)
+    const onAbort = () => {
+      clearTimeout(timer)
+      resolve()
+    }
+    req.once('close', onAbort)
+    timer.unref()
+  })
+}
+
+function clampRetryCount(value: number | undefined): number {
+  const n = value ?? 0
+  if (!Number.isFinite(n) || !Number.isInteger(n)) return 0
+  return Math.max(0, Math.min(n, 10))
+}
+
 export function createServer(opts: ServerOptions): Server {
   let boundPort = opts.port
   let httpServer: http.Server | null = null
   let isStarting = false
   const maxBodyBytes = opts.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES
   const forwardTimeoutMs = opts.forwardTimeoutMs ?? DEFAULT_FORWARD_TIMEOUT_MS
+  const retryCount = clampRetryCount(opts.retryCount)
+  const retryBaseDelayMs = opts.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS
 
   const handleRequest = async (
     req: http.IncomingMessage,
@@ -278,20 +304,36 @@ export function createServer(opts: ServerOptions): Server {
       return
     }
 
-    try {
-      const forwarded = await forwardEvent(opts.forwardTo, event, forwardTimeoutMs)
-      res.statusCode = forwarded.status
-      res.end(forwarded.body)
-    } catch (error) {
-      const err = toError(error)
-      try {
-        opts.onForwardError?.(event, err)
-      } catch {
-        // Don't let a broken callback turn a 502 into a 500.
+    let lastError: Error = new Error('forward failed')
+
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
+      if (attempt > 0) {
+        const delayMs = retryBaseDelayMs * Math.pow(RETRY_BACKOFF_MULTIPLIER, attempt - 1)
+        await cancellableDelay(delayMs, req)
+        try {
+          opts.onForwardRetry?.(event, attempt, retryCount, lastError)
+        } catch {
+          // Don't let a broken callback affect retries.
+        }
       }
-      res.statusCode = 502
-      res.end(`bad gateway: ${err.message}`)
+
+      try {
+        const forwarded = await forwardEvent(opts.forwardTo, event, forwardTimeoutMs)
+        res.statusCode = forwarded.status
+        res.end(forwarded.body)
+        return
+      } catch (error) {
+        lastError = toError(error)
+      }
     }
+
+    try {
+      opts.onForwardError?.(event, lastError)
+    } catch {
+      // Don't let a broken callback turn a 502 into a 500.
+    }
+    res.statusCode = 502
+    res.end(`bad gateway: ${lastError.message}`)
   }
 
   return {

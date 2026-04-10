@@ -69,6 +69,25 @@ It also parses the incoming `Connection` header and removes any header names lis
 - The CLI prints a `FWD` line with the event ID and error reason
 - A broken `onForwardError` callback is isolated so it cannot turn a forward failure into a server-side `500`
 
+## Retries
+
+By default, HookLens does not retry failed forwards. Pass `--retry <count>` to enable automatic retries with exponential backoff:
+
+```bash
+hooklens listen --forward-to http://localhost:3000/webhook --retry 3
+```
+
+Retry behavior:
+
+- Only connection-level errors are retried (`ECONNREFUSED`, `ETIMEDOUT`, DNS failures, timeouts). HTTP 4xx/5xx responses are **not** retried — those are real responses from the target.
+- Backoff schedule: 100 ms, 400 ms, 1.6 s, … (each delay is multiplied by 4).
+- Each retry attempt is printed with a `RETRY` prefix so you can see what is happening.
+- After all retries are exhausted, HookLens returns `502 bad gateway` and fires the `FWD` error line.
+
+::: warning Idempotency caveat
+Retries can cause the target to receive the same webhook more than once. Make sure your webhook handler is **idempotent** — it should safely handle duplicate deliveries without double-processing side effects.
+:::
+
 ## Response passthrough
 
 If the downstream target responds successfully, HookLens forwards that status code and response body back to the original caller.
