@@ -267,9 +267,7 @@ export function createServer(opts: ServerOptions): Server {
     }
 
     const verification = opts.verifier?.verify({ headers: event.headers, body: event.body }) ?? null
-    if (verification) {
-      event.verification = verification
-    }
+    event.verification = verification
 
     opts.storage.save(event)
     opts.onEvent?.(event, verification)

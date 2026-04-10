@@ -56,8 +56,11 @@ export function createStorage(dbPath: string) {
   // Add verification column to existing databases that lack it.
   try {
     db.exec(`ALTER TABLE events ADD COLUMN verification TEXT`)
-  } catch {
-    // Column already exists – ignore.
+  } catch (error) {
+    // Re-throw unless the column already exists.
+    if (!(error instanceof Error && /duplicate column/i.test(error.message))) {
+      throw error
+    }
   }
 
   const insertStmt = db.prepare(
