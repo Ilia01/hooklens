@@ -3,6 +3,7 @@ import { errorMessage } from '../errors.js'
 import { forwardEvent } from '../server/index.js'
 import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
+import { writeJsonLine } from './json-output.js'
 
 const DEFAULT_REPLAY_TARGET_URL = 'http://localhost:3000/webhook'
 
@@ -13,7 +14,7 @@ export interface ReplayFlags {
 
 export interface ReplayDeps {
   terminal?: TerminalUI
-  stdout?: { write(data: string): unknown }
+  stdout?: NodeJS.WriteStream
 }
 
 function parseTargetUrl(targetUrl: string | undefined): string {
@@ -48,7 +49,7 @@ export async function runReplay(
 
       if (flags.json) {
         const out = deps.stdout ?? process.stdout
-        out.write(JSON.stringify({ status: result.status, body }) + '\n')
+        writeJsonLine(out, { status: result.status, body })
       } else {
         terminal.printReplayResult({
           status: result.status,

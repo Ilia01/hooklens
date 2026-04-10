@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { Writable } from 'node:stream'
 import { runList } from '../../src/cli/list.js'
 import * as storageModule from '../../src/storage/index.js'
 import type { WebhookEvent } from '../../src/types.js'
@@ -47,13 +48,15 @@ function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
   }
 }
 
-function fakeStdout(): { write: ReturnType<typeof vi.fn>; written: () => string } {
+function fakeStdout(): { stream: NodeJS.WriteStream; written: () => string } {
   const chunks: string[] = []
-  const write = vi.fn((chunk: string) => {
-    chunks.push(chunk)
-    return true
+  const stream = new Writable({
+    write(chunk, _encoding, callback) {
+      chunks.push(chunk.toString())
+      callback()
+    },
   })
-  return { write, written: () => chunks.join('') }
+  return { stream: stream as NodeJS.WriteStream, written: () => chunks.join('') }
 }
 
 afterEach(() => {
@@ -130,7 +133,7 @@ describe('runList', () => {
 
     vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
 
-    await runList({ limit: '2', json: true }, { terminal, stdout })
+    await runList({ limit: '2', json: true }, { terminal, stdout: stdout.stream })
 
     expect(terminal.printEventList).not.toHaveBeenCalled()
 
@@ -160,9 +163,9 @@ describe('runList', () => {
 
     vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
 
-    await runList({ json: true }, { terminal, stdout })
+    await runList({ json: true }, { terminal, stdout: stdout.stream })
 
-    expect(stdout.write).not.toHaveBeenCalled()
+    expect(stdout.written()).toBe('')
     expect(terminal.printEventList).not.toHaveBeenCalled()
   })
 })

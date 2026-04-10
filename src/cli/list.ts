@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { errorMessage } from '../errors.js'
 import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
+import { writeJsonLine } from './json-output.js'
 
 export interface ListFlags {
   limit?: string | number
@@ -10,7 +11,7 @@ export interface ListFlags {
 
 export interface ListDeps {
   terminal?: TerminalUI
-  stdout?: { write(data: string): unknown }
+  stdout?: NodeJS.WriteStream
 }
 
 function parseLimit(limit: string | number | undefined): number {
@@ -36,14 +37,12 @@ export async function runList(flags: ListFlags, deps: ListDeps = {}): Promise<vo
       const out = deps.stdout ?? process.stdout
 
       for (const event of events) {
-        out.write(
-          JSON.stringify({
-            id: event.id,
-            timestamp: event.timestamp,
-            method: event.method,
-            path: event.path,
-          }) + '\n',
-        )
+        writeJsonLine(out, {
+          id: event.id,
+          timestamp: event.timestamp,
+          method: event.method,
+          path: event.path,
+        })
       }
     } else {
       terminal.printEventList(events)
