@@ -215,6 +215,7 @@ async function readResponseBody(response: Response, maxBytes: number): Promise<s
       if (done) break
       totalBytes += value.byteLength
       if (totalBytes > maxBytes) {
+        await reader.cancel()
         throw new Error(`forward response too large: max ${maxBytes} bytes`)
       }
       chunks.push(value)
