@@ -1,13 +1,13 @@
 ---
 layout: home
+title: HookLens — Debug webhook signature failures locally
+titleTemplate: false
+description: CLI tool that captures raw webhook requests, verifies signatures, and replays events so you can debug verification failures before your framework hides the evidence.
 
 hero:
   name: HookLens
-  text: Inspect, verify, and replay webhooks
-  tagline: Figure out why webhook signature verification failed before your framework hides the evidence.
-  image:
-    src: /logo.svg
-    alt: HookLens
+  text: Debug webhook signatures locally.
+  tagline: The webhook reached your app but verification failed. HookLens captures the raw request, tells you what went wrong, and replays the event after you fix it.
   actions:
     - theme: brand
       text: Getting Started
@@ -15,51 +15,6 @@ hero:
     - theme: alt
       text: Commands
       link: /commands/
-    - theme: alt
-      text: GitHub
-      link: https://github.com/Ilia01/hooklens
 ---
 
-<div class="home-demo">
-  <p class="home-demo-copy">
-    HookLens sits between the webhook provider and your app. It captures the request, verifies it, stores it locally, and can forward or replay it later.
-  </p>
-  <div class="home-demo-frame">
-    <img
-      src="/hooklens-demo.gif"
-      alt="HookLens demo showing listen, list, and replay across two terminal panes with failing and successful GitHub webhook verification."
-    />
-  </div>
-</div>
-
-<div class="home-feature-grid">
-  <div class="home-feature-card">
-    <h2>Capture raw requests</h2>
-    <p>Store the exact payload, headers, and path for later inspection.</p>
-  </div>
-  <div class="home-feature-card">
-    <h2>Explain verification failures</h2>
-    <p>Get specific failure reasons instead of a generic signature mismatch.</p>
-  </div>
-  <div class="home-feature-card">
-    <h2>Replay safely</h2>
-    <p>Resend stored events to a new target after changing your app setup.</p>
-  </div>
-</div>
-
-<div class="home-providers">
-  <p class="home-providers-label">Current provider support</p>
-  <div class="home-providers-list">
-    <span class="provider-badge provider-stripe">Stripe</span>
-    <span class="provider-badge provider-github">GitHub</span>
-  </div>
-</div>
-
-<div class="home-cta">
-  <p>
-    Start with <a href="./getting-started">Getting Started</a> for the first capture flow, or jump to
-    <a href="./commands/">Commands</a> for the full CLI reference. More providers can be added without changing the server or
-    storage layers. The verifier seam is documented in
-    <a href="./verification/adding-providers">Adding Providers</a>.
-  </p>
-</div>
+<HomePageContent />
