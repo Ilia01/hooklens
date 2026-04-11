@@ -10,7 +10,11 @@ export async function withDefaultStorage<T>(run: (storage: Storage) => T | Promi
   try {
     return await run(storage)
   } finally {
-    storage.close()
+    try {
+      storage.close()
+    } catch {
+      // Swallow close errors to avoid masking the original error from run().
+    }
   }
 }
 
