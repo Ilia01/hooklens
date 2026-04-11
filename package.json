@@ -1,7 +1,7 @@
 {
   "name": "hooklens",
-  "version": "1.0.0",
-  "description": "Inspect, verify, and replay webhooks from your terminal",
+  "version": "1.0.1",
+  "description": "Debug webhook signature failures locally.",
   "type": "module",
   "bin": {
     "hooklens": "./dist/index.js"
@@ -28,7 +28,10 @@
     "webhook",
     "debug",
     "stripe",
+    "stripe-webhooks",
+    "github-webhooks",
     "signature",
+    "webhook-signature",
     "replay",
     "cli",
     "developer-tools"
@@ -42,7 +45,7 @@
   "bugs": {
     "url": "https://github.com/Ilia01/hooklens/issues"
   },
-  "homepage": "https://github.com/Ilia01/hooklens#readme",
+  "homepage": "https://ilia01.github.io/hooklens/",
   "engines": {
     "node": ">=24.0.0"
   },
