@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="./docs/public/logo.svg" alt="HookLens logo" width="88" height="88">
+<img src="https://ilia01.github.io/hooklens/logo.svg" alt="HookLens logo" width="88" height="88">
 
 # HookLens
 
-**Inspect, verify, and replay webhooks from your terminal.**
+**Debug webhook signature failures locally.**
 
 Figure out why webhook signature verification failed before your framework hides the evidence.
 
@@ -17,7 +17,14 @@ Figure out why webhook signature verification failed before your framework hides
 
 ---
 
-HookLens is an open-source CLI for local webhook debugging. It captures the raw request before your framework mutates it, verifies the signature, stores the event locally, and lets you replay or forward it while you fix your app.
+HookLens is a local CLI for the annoying part of webhook debugging:
+the delivery reached your app, verification still failed, and your framework already changed the body you needed to inspect.
+
+It captures the incoming request before parsing, verifies it locally, stores the event, and lets you replay the exact delivery after you fix your app.
+
+<p align="center">
+  <img src="https://ilia01.github.io/hooklens/hooklens-demo.gif" alt="HookLens demo showing capture, verification, listing, and replay from the terminal" width="980">
+</p>
 
 ## Install
 
@@ -27,27 +34,35 @@ HookLens is an open-source CLI for local webhook debugging. It captures the raw 
 npm install -g hooklens
 ```
 
-## Quick links
+## The loop
 
-- [Getting Started](https://ilia01.github.io/hooklens/getting-started)
-- [Commands](https://ilia01.github.io/hooklens/commands/)
-- [Verification](https://ilia01.github.io/hooklens/verification/)
-- [Forwarding](https://ilia01.github.io/hooklens/forwarding)
-- [Architecture](https://ilia01.github.io/hooklens/architecture)
+```bash
+hooklens listen --verify github --secret ghsecret_xxx
+hooklens list
+hooklens inspect evt_abc123
+hooklens replay evt_abc123 --to http://localhost:3000/webhook
+```
 
-## Current provider support
+Point your provider CLI, tunnel, or webhook source at `http://127.0.0.1:4400`.
 
-- Stripe
-- GitHub
+Use HookLens when:
 
-## What it helps with
+- the request reached your machine, but signature verification failed
+- your framework parsed or re-serialized the body before verification
+- you need the exact stored request, not a vague error line
+- you want to replay the same event after changing middleware, secrets, or handler logic
 
-- Raw body mutation before signature verification
-- Missing or malformed webhook signature headers
-- Replaying captured events after middleware or secret changes
-- Forwarding webhook traffic to a local target while keeping capture history
+It is not a tunnel, a hosted webhook inbox, or a replacement for provider delivery tooling.
 
-Detailed command usage, verification behavior, forwarding notes, and contributor guidance live in the docs and [CONTRIBUTING.md](./CONTRIBUTING.md).
+## Read Next
+
+- [Getting Started](https://ilia01.github.io/hooklens/getting-started) for installation and first capture
+- [Commands](https://ilia01.github.io/hooklens/commands/) for the CLI reference
+- [Verification](https://ilia01.github.io/hooklens/verification/) for failure codes and provider behavior
+- [Stripe signature failures](https://ilia01.github.io/hooklens/verification/stripe-signature-failures)
+- [GitHub signature mismatches](https://ilia01.github.io/hooklens/verification/github-signature-mismatch)
+- [Raw body mutation](https://ilia01.github.io/hooklens/verification/raw-body-mutation)
+- [Contributing](./CONTRIBUTING.md)
 
 ## License
 

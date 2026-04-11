@@ -2,14 +2,14 @@
 
 HookLens currently exposes six CLI commands:
 
-| Command                       | Purpose                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------ |
-| `hooklens listen`             | Receive webhooks locally, verify them, store them, and optionally forward them |
-| `hooklens list`               | Show stored webhook events                                                     |
-| `hooklens inspect <event-id>` | View full details of a stored event                                            |
-| `hooklens replay <event-id>`  | Re-send a stored event to a target URL                                         |
-| `hooklens delete <event-id>`  | Delete a single stored event                                                   |
-| `hooklens clear`              | Delete all stored events                                                       |
+| Command                 | Purpose                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `hooklens listen`       | Receive webhooks locally, verify them, store them, and optionally forward them |
+| `hooklens list`         | Show stored webhook events                                                     |
+| `hooklens inspect <id>` | View full details of a stored event                                            |
+| `hooklens replay <id>`  | Re-send a stored event to a target URL                                         |
+| `hooklens delete <id>`  | Delete a single stored event                                                   |
+| `hooklens clear`        | Delete all stored events                                                       |
 
 ## Typical workflow
 

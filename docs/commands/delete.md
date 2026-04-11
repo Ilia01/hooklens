@@ -5,7 +5,7 @@ Delete a single stored webhook event by ID.
 ## Usage
 
 ```bash
-hooklens delete <event-id>
+hooklens delete <id>
 ```
 
 ## Examples

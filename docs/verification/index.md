@@ -2,6 +2,15 @@
 
 HookLens currently supports provider-specific verification for Stripe and GitHub.
 
+Use this section when the request reached your app, but verification still failed and you need to know whether the problem is the header, the secret,
+the timestamp, or the raw body itself.
+
+## Start with the problem you have
+
+- [Debug Stripe webhook signature verification failed locally](/verification/stripe-signature-failures)
+- [Fix GitHub `x-hub-signature-256` mismatches locally](/verification/github-signature-mismatch)
+- [Why raw body mutation breaks webhook verification](/verification/raw-body-mutation)
+
 ## Supported providers
 
 | Provider | Header                | Signature shape                 |

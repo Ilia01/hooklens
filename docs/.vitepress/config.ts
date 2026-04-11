@@ -2,10 +2,11 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'HookLens',
-  description: 'Inspect, verify, and replay webhooks from your terminal.',
+  description:
+    'CLI tool that captures raw webhook requests, verifies signatures locally, and replays stored events for debugging.',
   base: '/hooklens/',
   appearance: 'dark',
-  head: [['link', { rel: 'icon', href: '/logo.svg' }]],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/hooklens/logo.svg' }]],
   lastUpdated: true,
   cleanUrls: true,
   themeConfig: {
@@ -44,6 +45,9 @@ export default defineConfig({
         text: 'Verification',
         items: [
           { text: 'Overview', link: '/verification/' },
+          { text: 'Stripe Failures', link: '/verification/stripe-signature-failures' },
+          { text: 'GitHub Mismatch', link: '/verification/github-signature-mismatch' },
+          { text: 'Raw Body Mutation', link: '/verification/raw-body-mutation' },
           { text: 'Adding Providers', link: '/verification/adding-providers' },
         ],
       },
