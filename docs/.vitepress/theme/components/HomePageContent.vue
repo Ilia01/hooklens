@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const terminalLines = [
   { text: '$ hooklens listen --port 4400 --verify github --secret ghsecret_xxx', type: 'input' },
@@ -117,14 +117,25 @@ const problemGuides = [
 ] as const
 
 const visibleLines = ref(0)
+let intervalId: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   let i = 0
-  const interval = setInterval(() => {
+  intervalId = setInterval(() => {
     i++
     visibleLines.value = i
-    if (i >= terminalLines.length) clearInterval(interval)
+    if (i >= terminalLines.length && intervalId) {
+      clearInterval(intervalId)
+      intervalId = null
+    }
   }, 180)
+})
+
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+    intervalId = null
+  }
 })
 </script>
 
