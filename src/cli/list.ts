@@ -1,8 +1,8 @@
 import { Command } from 'commander'
-import { errorMessage } from '../errors.js'
-import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
+import { DEFAULT_LIST_LIMIT } from './defaults.js'
 import { writeJsonLine } from './json-output.js'
+import { runCommandAction, withDefaultStorage } from './runtime.js'
 
 export interface ListFlags {
   limit?: string | number
@@ -26,11 +26,10 @@ function parseLimit(limit: string | number | undefined): number {
 }
 
 export async function runList(flags: ListFlags, deps: ListDeps = {}): Promise<void> {
-  const limit = parseLimit(flags.limit ?? '20')
+  const limit = parseLimit(flags.limit ?? DEFAULT_LIST_LIMIT)
   const terminal = deps.terminal ?? createTerminal()
-  const storage = createStorage(defaultDbPath())
 
-  try {
+  return withDefaultStorage((storage) => {
     const events = storage.list(limit)
 
     if (flags.json) {
@@ -47,14 +46,12 @@ export async function runList(flags: ListFlags, deps: ListDeps = {}): Promise<vo
     } else {
       terminal.printEventList(events)
     }
-  } finally {
-    storage.close()
-  }
+  })
 }
 
 export const listCommand = new Command('list')
   .description('Show received webhook events')
-  .option('-n, --limit <count>', 'Number of events to show', '20')
+  .option('-n, --limit <count>', 'Number of events to show', String(DEFAULT_LIST_LIMIT))
   .option('--json', 'Output as newline-delimited JSON')
   .addHelpText(
     'after',
@@ -65,12 +62,5 @@ Examples:
   hooklens list --json`,
   )
   .action(async (options) => {
-    const terminal = createTerminal()
-
-    try {
-      await runList(options, { terminal })
-    } catch (error) {
-      terminal.printError(errorMessage(error))
-      process.exitCode = 1
-    }
+    await runCommandAction((terminal) => runList(options, { terminal }))
   })

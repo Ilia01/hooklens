@@ -1,7 +1,6 @@
 import { Command } from 'commander'
-import { errorMessage } from '../errors.js'
-import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
+import { runCommandAction, withDefaultStorage } from './runtime.js'
 
 export interface ClearFlags {
   yes?: boolean
@@ -36,14 +35,10 @@ export async function runClear(flags: ClearFlags, deps: ClearDeps = {}): Promise
     }
   }
 
-  const storage = createStorage(defaultDbPath())
-
-  try {
+  return withDefaultStorage((storage) => {
     const count = storage.clear()
     terminal.printCleared(count)
-  } finally {
-    storage.close()
-  }
+  })
 }
 
 export const clearCommand = new Command('clear')
@@ -57,12 +52,5 @@ Examples:
   hooklens clear`,
   )
   .action(async (options) => {
-    const terminal = createTerminal()
-
-    try {
-      await runClear(options, { terminal })
-    } catch (error) {
-      terminal.printError(errorMessage(error))
-      process.exitCode = 1
-    }
+    await runCommandAction((terminal) => runClear(options, { terminal }))
   })
