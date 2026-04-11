@@ -1,7 +1,6 @@
 import { Command } from 'commander'
-import { errorMessage } from '../errors.js'
-import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
+import { runCommandAction, withDefaultStorage } from './runtime.js'
 
 export interface DeleteDeps {
   terminal?: TerminalUI
@@ -9,9 +8,8 @@ export interface DeleteDeps {
 
 export async function runDelete(eventId: string, deps: DeleteDeps = {}): Promise<void> {
   const terminal = deps.terminal ?? createTerminal()
-  const storage = createStorage(defaultDbPath())
 
-  try {
+  return withDefaultStorage((storage) => {
     const deleted = storage.delete(eventId)
 
     if (!deleted) {
@@ -19,9 +17,7 @@ export async function runDelete(eventId: string, deps: DeleteDeps = {}): Promise
     }
 
     terminal.printDeleted(eventId)
-  } finally {
-    storage.close()
-  }
+  })
 }
 
 export const deleteCommand = new Command('delete')
@@ -34,12 +30,5 @@ Examples:
   hooklens delete evt_abc123`,
   )
   .action(async (eventId) => {
-    const terminal = createTerminal()
-
-    try {
-      await runDelete(eventId, { terminal })
-    } catch (error) {
-      terminal.printError(errorMessage(error))
-      process.exitCode = 1
-    }
+    await runCommandAction((terminal) => runDelete(eventId, { terminal }))
   })

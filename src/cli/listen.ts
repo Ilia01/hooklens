@@ -6,6 +6,8 @@ import type { VerificationResult, Verifier, WebhookEvent } from '../types.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
 import { createGitHubVerifier } from '../verify/github.js'
 import { createStripeVerifier } from '../verify/stripe.js'
+import { DEFAULT_LISTEN_PORT, DEFAULT_RETRY_COUNT } from './defaults.js'
+import { runCommandAction } from './runtime.js'
 
 export interface ListenFlags {
   port?: string | number
@@ -37,7 +39,7 @@ function parsePort(port: string | number | undefined): number {
 }
 
 function parseRetryCount(retry: string | number | undefined): number {
-  if (retry === undefined) return 0
+  if (retry === undefined) return DEFAULT_RETRY_COUNT
   const parsed = typeof retry === 'number' ? retry : Number(retry)
 
   if (!Number.isInteger(parsed) || parsed < 0 || parsed > 10) {
@@ -184,11 +186,15 @@ export async function runListen(flags: ListenFlags, deps: ListenDeps = {}): Prom
 
 export const listenCommand = new Command('listen')
   .description('Start receiving webhooks')
-  .option('-p, --port <port>', 'Port to listen on', '4400')
+  .option('-p, --port <port>', 'Port to listen on', String(DEFAULT_LISTEN_PORT))
   .option('--verify <provider>', 'Verify signatures (stripe, github)')
   .option('--secret <secret>', 'Webhook signing secret')
   .option('--forward-to <url>', 'Forward received webhooks to this URL')
-  .option('--retry <count>', 'Retry failed forwards with exponential backoff', '0')
+  .option(
+    '--retry <count>',
+    'Retry failed forwards with exponential backoff',
+    String(DEFAULT_RETRY_COUNT),
+  )
   .addHelpText(
     'after',
     `
@@ -200,13 +206,5 @@ Examples:
   hooklens listen --forward-to http://localhost:3000/webhook --retry 3`,
   )
   .action(async (options) => {
-    const terminal = createTerminal()
-
-    try {
-      await runListen(options, { terminal })
-    } catch (error) {
-      terminal.printError(errorMessage(error))
-
-      process.exitCode = 1
-    }
+    await runCommandAction((terminal) => runListen(options, { terminal }))
   })

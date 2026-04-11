@@ -1,8 +1,7 @@
 import { Command } from 'commander'
-import { errorMessage } from '../errors.js'
-import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
 import { writeJsonLine } from './json-output.js'
+import { runCommandAction, withDefaultStorage } from './runtime.js'
 
 export interface InspectFlags {
   json?: boolean
@@ -19,9 +18,8 @@ export async function runInspect(
   deps: InspectDeps = {},
 ): Promise<void> {
   const terminal = deps.terminal ?? createTerminal()
-  const storage = createStorage(defaultDbPath())
 
-  try {
+  return withDefaultStorage((storage) => {
     const event = storage.load(eventId)
 
     if (!event) {
@@ -34,9 +32,7 @@ export async function runInspect(
     } else {
       terminal.printEventDetail(event)
     }
-  } finally {
-    storage.close()
-  }
+  })
 }
 
 export const inspectCommand = new Command('inspect')
@@ -51,12 +47,5 @@ Examples:
   hooklens inspect evt_abc123 --json`,
   )
   .action(async (eventId, options) => {
-    const terminal = createTerminal()
-
-    try {
-      await runInspect(eventId, options, { terminal })
-    } catch (error) {
-      terminal.printError(errorMessage(error))
-      process.exitCode = 1
-    }
+    await runCommandAction((terminal) => runInspect(eventId, options, { terminal }))
   })

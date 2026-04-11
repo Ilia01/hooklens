@@ -1,11 +1,10 @@
 import { Command } from 'commander'
 import { errorMessage } from '../errors.js'
 import { forwardEvent } from '../server/index.js'
-import { createStorage, defaultDbPath } from '../storage/index.js'
 import { createTerminal, type TerminalUI } from '../ui/terminal.js'
+import { DEFAULT_REPLAY_TARGET_URL } from './defaults.js'
 import { writeJsonLine } from './json-output.js'
-
-const DEFAULT_REPLAY_TARGET_URL = 'http://localhost:3000/webhook'
+import { runCommandAction, withDefaultStorage } from './runtime.js'
 
 export interface ReplayFlags {
   to?: string
@@ -34,9 +33,8 @@ export async function runReplay(
 ): Promise<void> {
   const targetUrl = parseTargetUrl(flags.to)
   const terminal = deps.terminal ?? createTerminal()
-  const storage = createStorage(defaultDbPath())
 
-  try {
+  return withDefaultStorage(async (storage) => {
     const event = storage.load(eventId)
 
     if (!event) {
@@ -59,9 +57,7 @@ export async function runReplay(
     } catch (error) {
       throw new Error(`Failed to replay "${eventId}" to ${targetUrl}: ${errorMessage(error)}`)
     }
-  } finally {
-    storage.close()
-  }
+  })
 }
 
 export const replayCommand = new Command('replay')
@@ -78,12 +74,5 @@ Examples:
   hooklens replay evt_abc123 --json`,
   )
   .action(async (eventId, options) => {
-    const terminal = createTerminal()
-
-    try {
-      await runReplay(eventId, options, { terminal })
-    } catch (error) {
-      terminal.printError(errorMessage(error))
-      process.exitCode = 1
-    }
+    await runCommandAction((terminal) => runReplay(eventId, options, { terminal }))
   })
