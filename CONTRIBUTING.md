@@ -8,15 +8,19 @@ Thanks for wanting to contribute.
 git clone https://github.com/Ilia01/hooklens.git
 cd hooklens
 npm install
-npm run dev
 ```
+
+Useful local loops:
+
+- `npm run dev` for CLI/runtime work
+- `npm run docs:dev` for docs or homepage work
 
 ## Making changes
 
 1. Open an issue first if it's anything beyond a typo fix
 2. Fork the repo and create a branch from `main`
 3. Make your changes
-4. Make sure checks pass:
+4. Make sure the relevant checks pass:
 
 ```bash
 npm test
@@ -24,13 +28,41 @@ npm run typecheck
 npm run lint
 ```
 
+If you touched docs, the homepage, or the VitePress theme, also run:
+
+```bash
+npm run docs:build
+```
+
 5. Open a PR against `main`
+
+## Working in the CLI
+
+Shared defaults live in `src/cli/defaults.ts`.
+
+Shared command wrappers live in `src/cli/runtime.ts`:
+
+- `withDefaultStorage(...)` for commands that open the default SQLite store
+- `runCommandAction(...)` for the standard terminal/error wrapper around Commander actions
+
+If you add or refactor commands, reuse those helpers instead of duplicating setup and cleanup logic.
+
+## Working in the docs site
+
+The docs site is a VitePress app.
+
+- homepage content entry point: `docs/index.md`
+- custom homepage component: `docs/.vitepress/theme/components/HomePageContent.vue`
+- homepage and docs theme styles: `docs/.vitepress/theme/style.css`
+- site config and sidebar: `docs/.vitepress/config.ts`
+
+If you change the homepage or theme layer, always run `npm run docs:build` before opening the PR.
 
 ## Adding a provider
 
 The server knows nothing about specific providers. It just calls `verify()` on whatever `Verifier` you hand it.
 
-Adding a new one touches three files.
+Adding a new one usually touches four places.
 
 ### The contract
 
@@ -63,7 +95,11 @@ If the provider has an official SDK, use it as a test oracle. That way future up
 
 Add a case to `buildVerifier` in `src/cli/listen.ts`.
 
-Nothing else changes. Server, storage, and forwarding stay untouched. That's the whole point of the seam.
+**4. Update the docs**.
+
+If the provider is user-facing, update `docs/verification/adding-providers.md` and the relevant verification index or guide pages so contributors and users can actually discover it.
+
+Server, storage, and forwarding should stay untouched. That's the whole point of the seam.
 
 ### Result codes
 
@@ -109,11 +145,11 @@ We forward via `fetch()`. undici computes its own framing from the body we pass.
 
 ### Body size
 
-We buffer the whole request body in memory.
+We buffer the whole request body in memory and currently cap it at 1 MiB.
 
 This is acceptable because we only listen on `127.0.0.1`. The blast radius is local processes on the same machine.
 
-If anyone ever changes the bind address to something network-reachable, add a max body size check first. Otherwise a large body can OOM the process.
+If anyone ever changes the bind address or the cap, review that carefully first. A larger or unbounded body budget changes the local resource-exhaustion story immediately.
 
 ### Forward target
 

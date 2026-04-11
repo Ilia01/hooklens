@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.0.1
+
+Released on April 11, 2026.
+
+Highlights:
+
+- refreshed the docs homepage and README around webhook signature failure debugging
+- added provider-specific verification guides for Stripe, GitHub, and raw body mutation
+- documented the current CLI/runtime helper patterns and docs contribution workflow
+- fixed the CLI version output to read from `package.json`
+- tightened npm package metadata for the docs site and search surfaces
+
+Release:
+
+- [GitHub release v1.0.1](https://github.com/Ilia01/hooklens/releases/tag/v1.0.1)
+
 ## v1.0.0
 
 Released on April 10, 2026.

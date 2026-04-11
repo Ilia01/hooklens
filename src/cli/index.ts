@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import packageJson from '../../package.json'
 import { errorMessage } from '../errors.js'
 import { clearCommand } from './clear.js'
 import { deleteCommand } from './delete.js'
@@ -9,10 +10,7 @@ import { replayCommand } from './replay.js'
 
 const program = new Command()
 
-program
-  .name('hooklens')
-  .description('Inspect, verify, and replay webhooks from your terminal')
-  .version('0.1.0')
+program.name('hooklens').description(packageJson.description).version(packageJson.version)
 
 program.addCommand(listenCommand)
 program.addCommand(listCommand)
