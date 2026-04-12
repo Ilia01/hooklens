@@ -12,8 +12,10 @@ When Stripe says the webhook delivery succeeded but your app still fails signatu
 - an expired timestamp outside the tolerance window
 - a mutated body because your framework parsed or re-serialized the request
 
-HookLens is useful here because it captures the raw request before framework parsing, verifies the Stripe signature itself, stores the event locally,
-and lets you replay the exact request after you fix your app.
+HookLens is useful here because it captures the request before your app/framework parses it, verifies the Stripe signature itself, stores the event locally,
+and lets you replay the delivery after you fix your app.
+
+Current limitation: HookLens's body storage/replay path is currently UTF-8 text-first, which matches the common Stripe JSON case but is not yet exact body-byte preservation. Byte-accurate raw-body support is tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
 
 ## Start HookLens with Stripe verification
 
@@ -40,7 +42,7 @@ HookLens maps Stripe verification failures to concrete failure codes:
 3. Check the HookLens output for `PASS` or `FAIL` and the reason.
 4. If verification fails, run `hooklens list` to inspect the stored event metadata.
 5. Fix the middleware, secret, or route handling in your app.
-6. Replay the exact stored event:
+6. Replay the stored event:
 
 ```bash
 hooklens replay evt_abc123 --to http://localhost:3000/webhook

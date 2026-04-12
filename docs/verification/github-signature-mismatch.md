@@ -8,8 +8,10 @@ description: Use HookLens to debug GitHub x-hub-signature-256 mismatches caused 
 GitHub signs the raw request body with HMAC-SHA256 and sends it in the `x-hub-signature-256` header. If that check fails in your app, the useful
 question is not just "did it fail?" but "what exactly failed?"
 
-HookLens answers that locally by capturing the raw request, validating GitHub's signature format, storing the event, and replaying the exact request
+HookLens answers that locally by capturing the request before your app/framework parses it, validating GitHub's signature format, storing the event, and replaying the delivery
 after you change your app.
+
+Current limitation: HookLens's body storage/replay path is currently UTF-8 text-first, which matches the common GitHub JSON case but is not yet exact body-byte preservation. Byte-accurate raw-body support is tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
 
 ## Start HookLens with GitHub verification
 

@@ -23,7 +23,9 @@ If the provider signed one byte sequence and your verifier checks another, the s
 
 ## Why HookLens helps
 
-HookLens captures the request before framework parsing and verifies against the raw body it received. That means it can distinguish between:
+HookLens captures the request before framework parsing and verifies against the body it received. In the current implementation that body is preserved through a UTF-8 text path, which is accurate for the common Stripe/GitHub JSON case but not yet byte-accurate raw-body storage/replay for arbitrary payloads. Exact byte preservation is tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
+
+That means HookLens can already distinguish between:
 
 - a bad secret
 - a missing or malformed signature header
