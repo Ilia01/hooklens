@@ -1,0 +1,52 @@
+name: User Feedback
+description: Tell me where HookLens helped, confused you, or broke down
+body:
+  - type: textarea
+    id: situation
+    attributes:
+      label: What were you trying to debug?
+      placeholder: Stripe signature mismatch in Next.js, GitHub webhook verification in Fastify, etc.
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider
+      placeholder: Stripe, GitHub, custom HMAC webhook, etc.
+    validations:
+      required: false
+  - type: input
+    id: framework
+    attributes:
+      label: Framework or runtime
+      placeholder: Express, Fastify, Next.js, Hono, Node HTTP, etc.
+    validations:
+      required: false
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What happened when you used HookLens?
+      placeholder: What it told you, where it got confusing, or where it failed
+    validations:
+      required: true
+  - type: textarea
+    id: missing
+    attributes:
+      label: What did you need that HookLens did not give you?
+      placeholder: Missing output, unclear docs, unsupported flow, bad replay behavior, etc.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: HookLens version
+      placeholder: '1.0.1'
+    validations:
+      required: false
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      placeholder: '24.0.0'
+    validations:
+      required: false

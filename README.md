@@ -8,7 +8,7 @@
 
 Figure out why webhook signature verification failed before your framework hides the evidence.
 
-[Documentation](https://ilia01.github.io/hooklens/) · [npm](https://www.npmjs.com/package/hooklens) · [Latest release](https://github.com/Ilia01/hooklens/releases/latest) · [Contributing](./CONTRIBUTING.md)
+[Documentation](https://ilia01.github.io/hooklens/) · [npm](https://www.npmjs.com/package/hooklens) · [Latest release](https://github.com/Ilia01/hooklens/releases/latest) · [Feedback](https://github.com/Ilia01/hooklens/issues/new/choose) · [Contributing](./CONTRIBUTING.md)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/Ilia01/hooklens/actions/workflows/ci.yml/badge.svg)](https://github.com/Ilia01/hooklens/actions/workflows/ci.yml)

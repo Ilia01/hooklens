@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'HookLens',
   description:
-    'CLI tool that captures raw webhook requests, verifies signatures locally, and replays stored events for debugging.',
+    'CLI tool that captures webhook requests before your app parses them, verifies signatures locally, and replays stored events for debugging.',
   base: '/hooklens/',
   appearance: 'dark',
   head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/hooklens/logo.svg' }]],
@@ -17,6 +17,7 @@ export default defineConfig({
       { text: 'Verification', link: '/verification/' },
       { text: 'Architecture', link: '/architecture' },
       { text: 'Changelog', link: '/changelog' },
+      { text: 'Feedback', link: 'https://github.com/Ilia01/hooklens/issues/new/choose' },
     ],
     sidebar: [
       {

@@ -1,6 +1,6 @@
 name: Bug Report
 description: Something isn't working
-labels: ["bug"]
+labels: ['bug']
 body:
   - type: textarea
     id: description
@@ -30,14 +30,14 @@ body:
     id: version
     attributes:
       label: HookLens version
-      placeholder: "0.1.0"
+      placeholder: '1.0.1'
     validations:
       required: true
   - type: input
     id: node-version
     attributes:
       label: Node.js version
-      placeholder: "22.0.0"
+      placeholder: '24.0.0'
     validations:
       required: true
   - type: dropdown

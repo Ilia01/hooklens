@@ -15,6 +15,9 @@ hero:
     - theme: alt
       text: Commands
       link: /commands/
+    - theme: alt
+      text: Give Feedback
+      link: https://github.com/Ilia01/hooklens/issues/new/choose
 ---
 
 <HomePageContent />

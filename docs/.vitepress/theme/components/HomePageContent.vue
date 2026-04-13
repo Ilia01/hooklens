@@ -98,6 +98,24 @@ const docLinks = [
   },
 ] as const
 
+const feedbackLinks = [
+  {
+    href: 'https://github.com/Ilia01/hooklens/issues/new?template=user_feedback.yml',
+    title: 'User feedback',
+    description: 'Tell me what you were debugging, where HookLens helped, and where it broke down.',
+  },
+  {
+    href: 'https://github.com/Ilia01/hooklens/issues/new?template=bug_report.yml',
+    title: 'Bug report',
+    description: 'Use this when the CLI, replay path, docs, or output is actually wrong.',
+  },
+  {
+    href: 'https://github.com/Ilia01/hooklens/issues/new?template=feature_request.yml',
+    title: 'Feature request',
+    description: 'Missing provider, missing command behavior, or a workflow HookLens should support.',
+  },
+] as const
+
 const problemGuides = [
   {
     provider: 'Stripe',
@@ -234,6 +252,26 @@ onUnmounted(() => {
       <h2 id="home-docs-title">Everything else.</h2>
       <div class="home-docs-grid">
         <a v-for="item in docLinks" :key="item.href" class="home-doc-card" :href="item.href">
+          <strong class="home-card-title">{{ item.title }}</strong>
+          <span class="home-card-desc">{{ item.description }}</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="home-feedback" aria-labelledby="home-feedback-title">
+      <p class="home-section-label">Feedback</p>
+      <h2 id="home-feedback-title">Tell me where HookLens failed you.</h2>
+      <p class="home-feedback-copy">
+        The useful reports are not generic. Tell me the provider, framework, exact failure, and
+        what you expected HookLens to show or do instead.
+      </p>
+      <div class="home-feedback-grid">
+        <a
+          v-for="item in feedbackLinks"
+          :key="item.href"
+          class="home-feedback-card"
+          :href="item.href"
+        >
           <strong class="home-card-title">{{ item.title }}</strong>
           <span class="home-card-desc">{{ item.description }}</span>
         </a>
