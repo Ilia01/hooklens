@@ -1,4 +1,9 @@
-# Adding Providers
+---
+title: Add a verification provider
+description: Extend HookLens with a new provider-specific verifier and wire it into the CLI and docs.
+---
+
+# Add a verification provider
 
 HookLens keeps provider-specific verification behind a small seam.
 

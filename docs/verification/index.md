@@ -63,4 +63,4 @@ That is why HookLens captures the request before framework parsing and why the `
 
 ## Next step
 
-If you want to add another provider, see [Adding Providers](/verification/adding-providers).
+If you want to extend HookLens with another verifier, see [Add a verification provider](/verification/adding-providers).
