@@ -3,7 +3,7 @@ import type { VerificationResult, Verifier } from '../types.js'
 import { getHeaderCaseInsensitive, tryCanonicalForm } from './headers.js'
 
 export interface VerifyGitHubOptions {
-  payload: string
+  payload: string | Uint8Array
   header: string | null | undefined
   secret: string
 }
@@ -12,7 +12,10 @@ const PROVIDER = 'github'
 const PREFIX = 'sha256='
 const SHA256_HEX = /^[0-9a-fA-F]{64}$/
 
-function computeHmac(secret: string, payload: string): string {
+function computeHmac(
+  secret: VerifyGitHubOptions['secret'],
+  payload: VerifyGitHubOptions['payload'],
+): string {
   return crypto.createHmac('sha256', secret).update(payload).digest('hex')
 }
 
@@ -84,7 +87,7 @@ export function createGitHubVerifier(opts: { secret: string }): Verifier {
     provider: PROVIDER,
     verify: (event) =>
       verifyGitHubSignature({
-        payload: event.body,
+        payload: event.bodyRaw,
         header: getHeaderCaseInsensitive(event.headers, 'x-hub-signature-256'),
         secret: opts.secret,
       }),

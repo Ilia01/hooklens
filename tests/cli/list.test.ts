@@ -7,13 +7,16 @@ import { defaultDbPath } from '../../src/storage/index.js'
 import { fakeStorage, fakeTerminal } from '../helpers.js'
 
 function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
+  const bodyText = '{}'
   return {
     id: 'evt_test',
     timestamp: '2026-04-08T12:00:00.000Z',
     method: 'POST',
     path: '/webhook',
     headers: {},
-    body: '{}',
+    bodyRaw: Buffer.from(bodyText, 'utf8'),
+    bodyText,
+    bodyExact: true,
     ...overrides,
   }
 }

@@ -5,6 +5,7 @@ import path from 'node:path'
 import type * as sqlite from 'node:sqlite'
 import {
   eventRowSchema,
+  tryDecodeUtf8,
   verificationResultSchema,
   webhookEventSchema,
   type EventRow,
@@ -22,17 +23,55 @@ export function defaultDbPath(): string {
   return path.join(os.homedir(), '.hooklens', 'events.db')
 }
 
+interface TableColumnInfo {
+  name: string
+  notnull: 0 | 1
+}
+
+function eventColumns(db: sqlite.DatabaseSync): Map<string, TableColumnInfo> {
+  const rows = db.prepare(`PRAGMA table_info(events)`).all() as unknown as TableColumnInfo[]
+  return new Map(rows.map((row) => [row.name, row]))
+}
+
+function migrateEventsTable(db: sqlite.DatabaseSync): void {
+  const columns = eventColumns(db)
+
+  if (!columns.has('body_raw')) {
+    db.exec(`ALTER TABLE events ADD COLUMN body_raw BLOB`)
+  }
+
+  if (!columns.has('verification')) {
+    db.exec(`ALTER TABLE events ADD COLUMN verification TEXT`)
+  }
+
+  if (!columns.has('body')) {
+    db.exec(`ALTER TABLE events ADD COLUMN body TEXT`)
+  }
+
+  if (columns.has('body_text')) {
+    db.exec(`
+      UPDATE events
+      SET body = COALESCE(body, body_text)
+      WHERE body_text IS NOT NULL
+    `)
+  }
+}
+
 function rowToEvent(row: EventRow): WebhookEvent {
   const verification = row.verification
     ? verificationResultSchema.parse(JSON.parse(row.verification))
     : null
+  const bodyRaw = row.body_raw ?? Buffer.from(row.body ?? '', 'utf8')
+  const bodyText = row.body_raw ? tryDecodeUtf8(row.body_raw) : (row.body ?? '')
   return webhookEventSchema.parse({
     id: row.id,
     timestamp: row.timestamp,
     method: row.method,
     path: row.path,
     headers: JSON.parse(row.headers),
-    body: row.body,
+    bodyRaw,
+    bodyText,
+    bodyExact: row.body_raw !== null && row.body_raw !== undefined,
     verification,
   })
 }
@@ -48,24 +87,17 @@ export function createStorage(dbPath: string) {
       method TEXT NOT NULL,
       path TEXT NOT NULL,
       headers TEXT NOT NULL,
-      body TEXT NOT NULL,
+      body TEXT,
+      body_raw BLOB,
       verification TEXT
     )
   `)
 
-  // Add verification column to existing databases that lack it.
-  try {
-    db.exec(`ALTER TABLE events ADD COLUMN verification TEXT`)
-  } catch (error) {
-    // Re-throw unless the column already exists.
-    if (!(error instanceof Error && /duplicate column/i.test(error.message))) {
-      throw error
-    }
-  }
+  migrateEventsTable(db)
 
   const insertStmt = db.prepare(
-    `INSERT OR REPLACE INTO events (id, timestamp, method, path, headers, body, verification)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO events (id, timestamp, method, path, headers, body, body_raw, verification)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   )
 
   const getStmt = db.prepare(`SELECT * FROM events WHERE id = ?`)
@@ -82,7 +114,8 @@ export function createStorage(dbPath: string) {
         event.method,
         event.path,
         JSON.stringify(event.headers),
-        event.body,
+        event.bodyText ?? '',
+        event.bodyRaw,
         event.verification ? JSON.stringify(event.verification) : null,
       )
     },

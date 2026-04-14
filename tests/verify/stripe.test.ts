@@ -255,7 +255,7 @@ describe('createStripeVerifier', () => {
     const header = signedHeader(PAYLOAD, SECRET, nowSeconds())
 
     const result = verifier.verify({
-      body: PAYLOAD,
+      bodyRaw: Buffer.from(PAYLOAD, 'utf8'),
       headers: { 'Stripe-Signature': header },
     })
 
@@ -267,7 +267,7 @@ describe('createStripeVerifier', () => {
     const verifier = createStripeVerifier({ secret: SECRET })
 
     const result = verifier.verify({
-      body: PAYLOAD,
+      bodyRaw: Buffer.from(PAYLOAD, 'utf8'),
       headers: {},
     })
 

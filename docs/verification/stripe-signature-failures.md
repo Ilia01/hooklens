@@ -15,7 +15,7 @@ When Stripe says the webhook delivery succeeded but your app still fails signatu
 HookLens is useful here because it captures the request before your app/framework parses it, verifies the Stripe signature itself, stores the event locally,
 and lets you replay the delivery after you fix your app.
 
-Current limitation: HookLens's body storage/replay path is currently UTF-8 text-first, which matches the common Stripe JSON case but is not yet exact body-byte preservation. Byte-accurate raw-body support is tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
+HookLens preserves the exact request bytes that Stripe signed and only derives UTF-8/JSON text for display.
 
 ## Start HookLens with Stripe verification
 

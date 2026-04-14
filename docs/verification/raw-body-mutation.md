@@ -23,7 +23,7 @@ If the provider signed one byte sequence and your verifier checks another, the s
 
 ## Why HookLens helps
 
-HookLens captures the request before framework parsing and verifies against the body it received. In the current implementation that body is preserved through a UTF-8 text path, which is accurate for the common Stripe/GitHub JSON case but not yet byte-accurate raw-body storage/replay for arbitrary payloads. Exact byte preservation is tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
+HookLens captures the request before framework parsing and verifies against the exact bytes it received. The stored raw body stays byte-accurate; UTF-8/JSON text is only a derived view for inspect/UI output.
 
 That means HookLens can already distinguish between:
 

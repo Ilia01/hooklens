@@ -1,9 +1,5 @@
 # Changelog
 
-## Upcoming
-
-- track byte-accurate raw-body storage, verification, and replay so HookLens can preserve exact body bytes instead of today's UTF-8 text path ([#30](https://github.com/Ilia01/hooklens/issues/30))
-
 ## v1.0.1
 
 Released on April 11, 2026.

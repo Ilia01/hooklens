@@ -23,7 +23,7 @@ the delivery reached your app, verification still failed, and your framework alr
 It captures the incoming request before your app/framework parses it, verifies it locally, stores the event, and lets you replay the delivery after you fix your app.
 
 > [!IMPORTANT]
-> HookLens currently stores and replays webhook bodies through a UTF-8 text path. That matches the common Stripe/GitHub JSON case, but it is not yet byte-accurate raw-body preservation and replay for arbitrary payloads. Exact body-byte support is tracked in [#30](https://github.com/Ilia01/hooklens/issues/30).
+> HookLens now preserves exact raw request bytes for storage, verification, and replay. UTF-8/JSON text is derived only for display and `--json` output.
 
 <p align="center">
   <img src="https://ilia01.github.io/hooklens/hooklens-demo.gif" alt="HookLens demo showing capture, verification, listing, and replay from the terminal" width="980">
@@ -60,6 +60,7 @@ It is not a tunnel, a hosted webhook inbox, or a replacement for provider delive
 ## Read Next
 
 - [Getting Started](https://ilia01.github.io/hooklens/getting-started) for installation and first capture
+- [Examples](./examples/README.md) for copy-paste Next.js, Express, and Fastify webhook setups
 - [Commands](https://ilia01.github.io/hooklens/commands/) for the CLI reference
 - [Verification](https://ilia01.github.io/hooklens/verification/) for failure codes and provider behavior
 - [Stripe signature failures](https://ilia01.github.io/hooklens/verification/stripe-signature-failures)

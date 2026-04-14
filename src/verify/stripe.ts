@@ -3,7 +3,7 @@ import type { VerificationResult, Verifier } from '../types.js'
 import { getHeaderCaseInsensitive, tryCanonicalForm } from './headers.js'
 
 export interface VerifyStripeOptions {
-  payload: string
+  payload: string | Uint8Array
   header: string | null | undefined
   secret: string
   tolerance?: number
@@ -42,8 +42,14 @@ function parseHeader(header: string): ParsedHeader | null {
   return { timestamp, signatures }
 }
 
-function computeHmac(secret: string, signedPayload: string): string {
+function computeHmac(secret: string, signedPayload: string | Uint8Array): string {
   return crypto.createHmac('sha256', secret).update(signedPayload).digest('hex')
+}
+
+function signedPayload(timestamp: number, payload: string | Uint8Array): Uint8Array {
+  const prefix = Buffer.from(`${timestamp}.`, 'utf8')
+  const body = typeof payload === 'string' ? Buffer.from(payload, 'utf8') : Buffer.from(payload)
+  return Buffer.concat([prefix, body])
 }
 
 function constantTimeMatch(expected: string, candidates: string[]): boolean {
@@ -95,8 +101,7 @@ export function verifyStripeSignature(opts: VerifyStripeOptions): VerificationRe
     )
   }
 
-  const signedPayload = `${parsed.timestamp}.${opts.payload}`
-  const expected = computeHmac(opts.secret, signedPayload)
+  const expected = computeHmac(opts.secret, signedPayload(parsed.timestamp, opts.payload))
 
   if (constantTimeMatch(expected, parsed.signatures)) {
     return success('Signature verified.')
@@ -104,7 +109,7 @@ export function verifyStripeSignature(opts: VerifyStripeOptions): VerificationRe
 
   const canonical = tryCanonicalForm(opts.payload)
   if (canonical !== null) {
-    const expectedCanonical = computeHmac(opts.secret, `${parsed.timestamp}.${canonical}`)
+    const expectedCanonical = computeHmac(opts.secret, signedPayload(parsed.timestamp, canonical))
     if (constantTimeMatch(expectedCanonical, parsed.signatures)) {
       return failure(
         'body_mutated',
@@ -129,7 +134,7 @@ export function createStripeVerifier(opts: StripeVerifierOptions): Verifier {
     provider: PROVIDER,
     verify: (event) =>
       verifyStripeSignature({
-        payload: event.body,
+        payload: event.bodyRaw,
         header: getHeaderCaseInsensitive(event.headers, 'stripe-signature'),
         secret: opts.secret,
         tolerance: opts.tolerance,

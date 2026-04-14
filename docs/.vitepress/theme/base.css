@@ -80,3 +80,15 @@
     width: auto;
   }
 }
+
+/* Sidebar spacing */
+
+@media (min-width: 960px) {
+  :root {
+    --vp-nav-height: 56px;
+  }
+
+  .VPSidebar {
+    padding-bottom: 24px !important;
+  }
+}

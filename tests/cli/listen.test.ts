@@ -54,7 +54,7 @@ describe('buildVerifier', () => {
     const verifier = buildVerifier({ verify: 'stripe', secret: 'whsec_xxx' })
     const result = verifier?.verify({
       headers: {},
-      body: '{}',
+      bodyRaw: Buffer.from('{}'),
     })
     expect(result).toBeDefined()
     expect(result?.provider).toBe('stripe')
@@ -208,7 +208,9 @@ describe('runListen', () => {
       method: 'POST',
       path: '/webhook',
       headers: {},
-      body: '{}',
+      bodyRaw: Buffer.from('{}'),
+      bodyText: '{}',
+      bodyExact: true,
     }
     const result: VerificationResult = {
       valid: true,
@@ -260,7 +262,9 @@ describe('runListen', () => {
       method: 'POST',
       path: '/webhook',
       headers: {},
-      body: '{}',
+      bodyRaw: Buffer.from('{}'),
+      bodyText: '{}',
+      bodyExact: true,
     }
     const result: VerificationResult = {
       valid: true,

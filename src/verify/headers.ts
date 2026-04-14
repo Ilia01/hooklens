@@ -1,3 +1,5 @@
+import { tryDecodeUtf8 } from '../types.js'
+
 export function getHeaderCaseInsensitive(
   headers: Record<string, string>,
   name: string,
@@ -9,10 +11,13 @@ export function getHeaderCaseInsensitive(
   return undefined
 }
 
-export function tryCanonicalForm(payload: string): string | null {
+export function tryCanonicalForm(payload: string | Uint8Array): string | null {
+  const text = typeof payload === 'string' ? payload : tryDecodeUtf8(payload)
+  if (text === null) return null
+
   try {
-    const canonical = JSON.stringify(JSON.parse(payload))
-    return canonical === payload ? null : canonical
+    const canonical = JSON.stringify(JSON.parse(text))
+    return canonical === text ? null : canonical
   } catch {
     return null
   }

@@ -5,7 +5,7 @@ HookLens currently supports provider-specific verification for Stripe and GitHub
 Use this section when the request reached your app, but verification still failed and you need to know whether the problem is the header, the secret,
 the timestamp, or the raw body itself.
 
-Current limitation: HookLens currently preserves webhook bodies through a UTF-8 text path. That is accurate for the common Stripe/GitHub JSON case, but not yet exact body-byte preservation/replay for arbitrary payloads. Byte-accurate raw-body support is tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
+HookLens preserves exact raw request bytes for storage, verification, and replay. Text output is a best-effort UTF-8 view layered on top for inspect/UI use.
 
 ## Start with the problem you have
 
@@ -59,7 +59,7 @@ HookLens:
 
 The raw body is the signed input. If your framework parses JSON and later re-serializes it, insignificant-looking differences like whitespace or key order can change the payload bytes and break verification.
 
-That is why HookLens captures the request before framework parsing and why the `body_mutated` result exists. Today that capture path is UTF-8 text-first; byte-accurate raw-body preservation is the next step tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
+That is why HookLens captures the request before framework parsing and why the `body_mutated` result exists. The stored raw bytes stay exact; any UTF-8/JSON rendering you see is derived only for display.
 
 ## Next step
 
