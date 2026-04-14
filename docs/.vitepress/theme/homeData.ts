@@ -1,6 +1,8 @@
 // Homepage content lives here so HomePageContent.vue stays pure layout.
 // When adding a provider, command, or failure code, edit this file.
 
+const GITHUB_ISSUES_NEW_BASE = 'https://github.com/Ilia01/hooklens/issues/new'
+
 export const terminalLines = [
   { text: '$ hooklens listen --port 4400 --verify github --secret ghsecret_xxx', type: 'input' },
   { text: '', type: 'blank' },
@@ -85,17 +87,17 @@ export const problemGuides = [
 
 export const feedbackLinks = [
   {
-    href: 'https://github.com/Ilia01/hooklens/issues/new?template=user_feedback.yml',
+    href: `${GITHUB_ISSUES_NEW_BASE}?template=user_feedback.yml`,
     title: 'User feedback',
     description: 'Tell me what you were debugging, where HookLens helped, and where it broke down.',
   },
   {
-    href: 'https://github.com/Ilia01/hooklens/issues/new?template=bug_report.yml',
+    href: `${GITHUB_ISSUES_NEW_BASE}?template=bug_report.yml`,
     title: 'Bug report',
     description: 'Use this when the CLI, replay path, docs, or output is actually wrong.',
   },
   {
-    href: 'https://github.com/Ilia01/hooklens/issues/new?template=feature_request.yml',
+    href: `${GITHUB_ISSUES_NEW_BASE}?template=feature_request.yml`,
     title: 'Feature request',
     description:
       'Missing provider, missing command behavior, or a workflow HookLens should support.',

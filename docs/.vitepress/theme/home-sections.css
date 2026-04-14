@@ -119,6 +119,16 @@
   animation: cursor-blink 1.1s step-end infinite;
 }
 
+/* Shared section heading typography */
+
+.section-heading {
+  color: var(--vp-c-text-1);
+  font-family: var(--hooklens-font-display);
+  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
 /* Failure codes */
 
 .home-codes {
@@ -133,11 +143,6 @@
 
 .home-codes-header h2 {
   margin: 0 0 0.7rem;
-  color: var(--vp-c-text-1);
-  font-family: var(--hooklens-font-display);
-  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.6rem);
-  line-height: 1;
-  letter-spacing: -0.05em;
 }
 
 .home-codes-header p {
@@ -203,11 +208,6 @@
 .home-workflow h2 {
   margin: 0 0 1.5rem;
   max-width: 18ch;
-  color: var(--vp-c-text-1);
-  font-family: var(--hooklens-font-display);
-  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.6rem);
-  line-height: 1;
-  letter-spacing: -0.05em;
 }
 
 .home-workflow-grid {
@@ -306,11 +306,6 @@
 
 .home-not-copy h2 {
   margin: 0 0 0.7rem;
-  color: var(--vp-c-text-1);
-  font-family: var(--hooklens-font-display);
-  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.6rem);
-  line-height: 1;
-  letter-spacing: -0.05em;
 }
 
 .home-not-copy p {
@@ -395,11 +390,6 @@
 
 .home-guides h2 {
   margin: 0 0 1.3rem;
-  color: var(--vp-c-text-1);
-  font-family: var(--hooklens-font-display);
-  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.6rem);
-  line-height: 1;
-  letter-spacing: -0.05em;
 }
 
 .home-guides-grid {
@@ -416,7 +406,8 @@
   font-size: 1rem;
 }
 
-.home-guides .home-card:hover {
+.home-guides .home-card:hover,
+.home-guides .home-card:focus-visible {
   border-left-color: var(--vp-c-brand-1);
   transform: translateX(2px);
 }
@@ -430,11 +421,6 @@
 
 .home-docs h2 {
   margin: 0 0 1.3rem;
-  color: var(--vp-c-text-1);
-  font-family: var(--hooklens-font-display);
-  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.6rem);
-  line-height: 1;
-  letter-spacing: -0.05em;
 }
 
 .home-docs-grid {
@@ -443,7 +429,8 @@
   gap: 1rem;
 }
 
-.home-docs .home-card:hover {
+.home-docs .home-card:hover,
+.home-docs .home-card:focus-visible {
   border-color: var(--vp-c-brand-soft);
   transform: translateY(-2px);
 }
@@ -457,11 +444,6 @@
 
 .home-feedback h2 {
   margin: 0 0 0.75rem;
-  color: var(--vp-c-text-1);
-  font-family: var(--hooklens-font-display);
-  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.6rem);
-  line-height: 1;
-  letter-spacing: -0.05em;
 }
 
 .home-feedback-copy {
@@ -478,12 +460,14 @@
   gap: 1rem;
 }
 
-.home-feedback .home-card:hover {
+.home-feedback .home-card:hover,
+.home-feedback .home-card:focus-visible {
   background: var(--vp-c-bg-elv);
   border-color: var(--vp-c-text-3);
   transform: none;
 }
 
-.dark .home-feedback .home-card:hover {
+.dark .home-feedback .home-card:hover,
+.dark .home-feedback .home-card:focus-visible {
   background: rgba(15, 25, 33, 0.9);
 }
