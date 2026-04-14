@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.1.0
+
+Released on April 15, 2026.
+
+Highlights:
+
+- raw body bytes preserved end-to-end: capture, SQLite BLOB storage, HMAC verification, replay, and CLI output
+- new `bodyRaw`, `bodyText`, and `bodyExact` fields replace the old string-only `body`
+- legacy text-only rows migrate automatically
+- framework examples for Express, Fastify, and Next.js App Router
+- docs homepage and theme refresh
+- verification guide navigation improvements
+
+Release:
+
+- [GitHub release v1.1.0](https://github.com/Ilia01/hooklens/releases/tag/v1.1.0)
+
 ## v1.0.1
 
 Released on April 11, 2026.
