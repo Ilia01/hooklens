@@ -23,7 +23,8 @@ export async function POST(req: Request): Promise<Response> {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown verification error'
-    return new Response(`Webhook signature verification failed: ${message}`, { status: 400 })
+    console.warn('Webhook signature verification failed:', message)
+    return new Response('Webhook signature verification failed', { status: 400 })
   }
 
   const payload = JSON.parse(rawBody)

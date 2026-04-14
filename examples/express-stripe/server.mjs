@@ -24,7 +24,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
     event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown verification error'
-    res.status(400).send(`Webhook signature verification failed: ${message}`)
+    console.warn('Webhook signature verification failed:', message)
+    res.status(400).send('Webhook signature verification failed')
     return
   }
 
