@@ -26,6 +26,20 @@ function writeLine(stream: NodeJS.WriteStream, line: string): void {
   stream.write(`${line}\n`)
 }
 
+function formatBodyForDisplay(event: WebhookEvent): string[] {
+  if (event.bodyText !== null) {
+    try {
+      return JSON.stringify(JSON.parse(event.bodyText), null, 2).split('\n')
+    } catch {
+      return event.bodyText.split('\n')
+    }
+  }
+
+  const hex = Buffer.from(event.bodyRaw).toString('hex')
+  const lines = hex.match(/.{1,32}/g) ?? []
+  return [`<binary body: ${event.bodyRaw.byteLength} bytes>`, ...lines]
+}
+
 function verificationLabel(result: VerificationResult | null): string {
   if (!result) return chalk.cyan('RECV')
   return result.valid ? chalk.green('PASS') : chalk.red('FAIL')
@@ -108,14 +122,7 @@ export function createTerminal(
       writeLine(stdout, '')
       writeLine(stdout, chalk.bold('Body:'))
 
-      let bodyText: string
-      try {
-        bodyText = JSON.stringify(JSON.parse(event.body), null, 2)
-      } catch {
-        bodyText = event.body
-      }
-
-      for (const line of bodyText.split('\n')) {
+      for (const line of formatBodyForDisplay(event)) {
         writeLine(stdout, `  ${line}`)
       }
     },

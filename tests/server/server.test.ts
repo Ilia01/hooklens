@@ -39,6 +39,7 @@ interface TargetRecord {
   path: string
   headers: http.IncomingHttpHeaders
   body: string
+  bodyRaw: Buffer
 }
 
 interface TargetServer {
@@ -62,11 +63,13 @@ async function startTarget(
     const chunks: Buffer[] = []
     req.on('data', (c: Buffer) => chunks.push(c))
     req.on('end', async () => {
+      const bodyRaw = Buffer.concat(chunks)
       const rec: TargetRecord = {
         method: req.method ?? '',
         path: req.url ?? '',
         headers: req.headers,
-        body: Buffer.concat(chunks).toString('utf8'),
+        body: bodyRaw.toString('utf8'),
+        bodyRaw,
       }
       received.push(rec)
       const resp = (await responder?.(rec)) ?? {}
@@ -96,6 +99,19 @@ async function postRaw(
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...headers },
+    body,
+  })
+  return { status: res.status, body: await res.text(), headers: res.headers }
+}
+
+async function postBytes(
+  url: string,
+  body: Uint8Array,
+  headers: Record<string, string> = {},
+): Promise<{ status: number; body: string; headers: Headers }> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/octet-stream', ...headers },
     body,
   })
   return { status: res.status, body: await res.text(), headers: res.headers }
@@ -289,7 +305,7 @@ describe('readBody', () => {
     req.emit('data', Buffer.from('{"ok":true}'))
     req.emit('end')
 
-    await expect(body).resolves.toBe('{"ok":true}')
+    await expect(body).resolves.toEqual(Buffer.from('{"ok":true}'))
     expect(req.listenerCount('data')).toBe(0)
     expect(req.listenerCount('end')).toBe(0)
     expect(req.listenerCount('error')).toBe(0)
@@ -297,6 +313,17 @@ describe('readBody', () => {
     expect(socket.listenerCount('error')).toBe(0)
     expect(proxy.listenerCount('close')).toBe(0)
     expect(proxy.listenerCount('error')).toBe(0)
+  })
+
+  it('preserves invalid UTF-8 bytes exactly', async () => {
+    const { req } = fakeBodyRequest()
+    const body = readBody(req, 1024)
+    const raw = Uint8Array.from([0x66, 0x6f, 0x80, 0x6f])
+
+    req.emit('data', Buffer.from(raw))
+    req.emit('end')
+
+    await expect(body).resolves.toEqual(Buffer.from(raw))
   })
 })
 
@@ -334,8 +361,24 @@ describe('createServer - request capture', () => {
     expect(events).toHaveLength(1)
     expect(events[0].method).toBe('POST')
     expect(events[0].path).toBe('/webhook')
-    expect(events[0].body).toBe(body)
+    expect(Buffer.from(events[0].bodyRaw)).toEqual(Buffer.from(body, 'utf8'))
+    expect(events[0].bodyText).toBe(body)
+    expect(events[0].bodyExact).toBe(true)
     expect(events[0].headers['x-custom-header']).toBe('hello')
+  })
+
+  it('captures non-UTF-8 request bodies exactly', async () => {
+    const fx = await hookLens()
+    const body = Uint8Array.from([0x66, 0x6f, 0x80, 0x6f])
+
+    await postBytes(`${fx.url}/binary`, body)
+
+    const events = fx.storage.list()
+    expect(events).toHaveLength(1)
+    expect(events[0].path).toBe('/binary')
+    expect(Buffer.from(events[0].bodyRaw)).toEqual(Buffer.from(body))
+    expect(events[0].bodyText).toBeNull()
+    expect(events[0].bodyExact).toBe(true)
   })
 
   it('preserves query strings in the captured path', async () => {
@@ -379,7 +422,8 @@ describe('createServer - request capture', () => {
     await postRaw(`${fx.url}/`, body)
 
     const [event] = fx.storage.list()
-    expect(event.body).toBe(body)
+    expect(Buffer.from(event.bodyRaw)).toEqual(Buffer.from(body, 'utf8'))
+    expect(event.bodyText).toBe(body)
   })
 
   it('handles GET requests with empty bodies', async () => {
@@ -390,7 +434,8 @@ describe('createServer - request capture', () => {
     const events = fx.storage.list()
     expect(events).toHaveLength(1)
     expect(events[0].method).toBe('GET')
-    expect(events[0].body).toBe('')
+    expect(Buffer.from(events[0].bodyRaw)).toEqual(Buffer.alloc(0))
+    expect(events[0].bodyText).toBe('')
   })
 
   it('calls onEvent for every captured request', async () => {
@@ -403,7 +448,7 @@ describe('createServer - request capture', () => {
     expect(onEvent).toHaveBeenCalledTimes(2)
     // second arg is null because no verify configured
     expect(onEvent.mock.calls[0][1]).toBeNull()
-    expect(onEvent.mock.calls[0][0].body).toBe('{"a":1}')
+    expect(onEvent.mock.calls[0][0].bodyText).toBe('{"a":1}')
   })
 
   it('returns 413 and skips storage when the body exceeds maxBodyBytes', async () => {
@@ -485,7 +530,7 @@ describe('createServer - verification', () => {
     // knows nothing about stripe still plugs in and runs.
     const onEvent = vi.fn<(e: WebhookEvent, r: VerificationResult | null) => void>()
     const verify = vi.fn<
-      (event: { headers: Record<string, string>; body: string }) => VerificationResult
+      (event: { headers: Record<string, string>; bodyRaw: Uint8Array }) => VerificationResult
     >(() => ({
       valid: true,
       provider: 'fake',
@@ -498,7 +543,7 @@ describe('createServer - verification', () => {
     await postRaw(`${fx.url}/`, '{"x":1}', { 'x-fake-sig': 'anything' })
 
     expect(verify).toHaveBeenCalledTimes(1)
-    expect(verify.mock.calls[0]?.[0].body).toBe('{"x":1}')
+    expect(Buffer.from(verify.mock.calls[0]?.[0].bodyRaw ?? [])).toEqual(Buffer.from('{"x":1}'))
     expect(verify.mock.calls[0]?.[0].headers['x-fake-sig']).toBe('anything')
     expect(onEvent.mock.calls[0]?.[1]?.provider).toBe('fake')
   })
@@ -514,6 +559,18 @@ describe('createServer - forwarding', () => {
 
     expect(downstream.received).toHaveLength(1)
     expect(downstream.received[0].body).toBe(body)
+  })
+
+  it('forwards binary request bodies without re-encoding them', async () => {
+    const downstream = await target()
+    const fx = await hookLens({ forwardTo: downstream.url })
+    const body = Uint8Array.from([0x66, 0x6f, 0x80, 0x6f])
+
+    await postBytes(`${fx.url}/binary`, body)
+
+    expect(downstream.received).toHaveLength(1)
+    expect(downstream.received[0].path).toBe('/binary')
+    expect(downstream.received[0].bodyRaw).toEqual(Buffer.from(body))
   })
 
   it('forwards method and path', async () => {
@@ -644,7 +701,7 @@ describe('createServer - forwarding', () => {
 
     expect(onForwardError).toHaveBeenCalledTimes(1)
     const [event, error] = onForwardError.mock.calls[0]
-    expect(event.body).toBe('{"a":1}')
+    expect(event.bodyText).toBe('{"a":1}')
     expect(error).toBeInstanceOf(Error)
     expect(error.message.length).toBeGreaterThan(0)
   })

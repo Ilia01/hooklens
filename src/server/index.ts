@@ -1,6 +1,7 @@
 import http from 'node:http'
 import crypto from 'node:crypto'
 import { errorMessage, toError } from '../errors.js'
+import { tryDecodeUtf8 } from '../types.js'
 import type { ReplayResult, VerificationResult, Verifier, WebhookEvent } from '../types.js'
 import type { createStorage } from '../storage/index.js'
 
@@ -84,7 +85,7 @@ function requestSockets(req: http.IncomingMessage): NodeJS.EventEmitter[] {
   return [...sockets]
 }
 
-export function readBody(req: http.IncomingMessage, maxBytes: number): Promise<string> {
+export function readBody(req: http.IncomingMessage, maxBytes: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = []
     let totalBytes = 0
@@ -108,7 +109,7 @@ export function readBody(req: http.IncomingMessage, maxBytes: number): Promise<s
       reject(error)
     }
 
-    const resolveOnce = (body: string) => {
+    const resolveOnce = (body: Buffer) => {
       if (settled) return
       settled = true
       cleanup()
@@ -125,7 +126,7 @@ export function readBody(req: http.IncomingMessage, maxBytes: number): Promise<s
       chunks.push(chunk)
     }
 
-    const onEnd = () => resolveOnce(Buffer.concat(chunks, totalBytes).toString('utf8'))
+    const onEnd = () => resolveOnce(Buffer.concat(chunks, totalBytes))
     const onError = (error: Error) => rejectOnce(error)
     const onSocketClose = () => rejectOnce(new Error('socket closed during request body'))
     const onSocketError = (error: Error) => rejectOnce(error)
@@ -257,7 +258,7 @@ export async function forwardEvent(
     const response = await fetch(destination, {
       method: event.method,
       headers: headersForForwarding(event.headers),
-      body: hasBody ? event.body : undefined,
+      body: hasBody ? event.bodyRaw : undefined,
       signal: controller.signal,
     })
 
@@ -294,8 +295,8 @@ function cancellableDelay(ms: number, req: http.IncomingMessage): Promise<void> 
   })
 }
 
-function clampRetryCount(value: number | undefined): number {
-  const n = value ?? 0
+function clampRetryCount(value: number | undefined = 0): number {
+  const n = value
   if (!Number.isFinite(n) || !Number.isInteger(n)) return 0
   return Math.max(0, Math.min(n, 10))
 }
@@ -314,7 +315,8 @@ export function createServer(opts: ServerOptions): Server {
     req: http.IncomingMessage,
     res: http.ServerResponse,
   ): Promise<void> => {
-    const body = await readBody(req, maxBodyBytes)
+    const bodyRaw = await readBody(req, maxBodyBytes)
+    const bodyText = tryDecodeUtf8(bodyRaw)
 
     const event: WebhookEvent = {
       id: generateEventId(),
@@ -322,10 +324,12 @@ export function createServer(opts: ServerOptions): Server {
       method: req.method ?? 'GET',
       path: req.url ?? '/',
       headers: headersToRecord(req.headers),
-      body,
+      bodyRaw,
+      bodyText,
+      bodyExact: true,
     }
 
-    const verification = opts.verifier?.verify({ headers: event.headers, body: event.body }) ?? null
+    const verification = opts.verifier?.verify({ headers: event.headers, bodyRaw: bodyRaw }) ?? null
     event.verification = verification
 
     opts.storage.save(event)

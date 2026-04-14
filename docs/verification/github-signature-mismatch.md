@@ -11,7 +11,7 @@ question is not just "did it fail?" but "what exactly failed?"
 HookLens answers that locally by capturing the request before your app/framework parses it, validating GitHub's signature format, storing the event, and replaying the delivery
 after you change your app.
 
-Current limitation: HookLens's body storage/replay path is currently UTF-8 text-first, which matches the common GitHub JSON case but is not yet exact body-byte preservation. Byte-accurate raw-body support is tracked in [issue #30](https://github.com/Ilia01/hooklens/issues/30).
+HookLens preserves the exact request bytes that GitHub signed and only derives UTF-8/JSON text for display.
 
 ## Start HookLens with GitHub verification
 

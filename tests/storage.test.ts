@@ -7,13 +7,16 @@ import { createStorage } from '../src/storage/index.js'
 import type { WebhookEvent } from '../src/types.js'
 
 function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
+  const bodyText = '{"type":"checkout.session.completed"}'
   return {
     id: 'evt_001',
     timestamp: '2026-04-06T12:00:00.000Z',
     method: 'POST',
     path: '/webhook',
     headers: { 'content-type': 'application/json' },
-    body: '{"type":"checkout.session.completed"}',
+    bodyRaw: Buffer.from(bodyText, 'utf8'),
+    bodyText,
+    bodyExact: true,
     ...overrides,
   }
 }
@@ -40,14 +43,15 @@ function injectRawRow(row: {
   timestamp: string
   method: string
   path: string
+  body?: string | null
   headers: string
-  body: string
+  bodyRaw: Uint8Array
 }): void {
   storage.close()
   const db = new DatabaseSync(dbPath)
   db.prepare(
-    `INSERT INTO events (id, timestamp, method, path, headers, body) VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(row.id, row.timestamp, row.method, row.path, row.headers, row.body)
+    `INSERT INTO events (id, timestamp, method, path, headers, body, body_raw) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(row.id, row.timestamp, row.method, row.path, row.headers, row.body ?? null, row.bodyRaw)
   db.close()
   storage = createStorage(dbPath)
 }
@@ -68,7 +72,11 @@ describe('load', () => {
     expect(loaded).not.toBeNull()
     expect(loaded!.id).toBe('evt_001')
     expect(loaded!.method).toBe('POST')
-    expect(loaded!.body).toBe('{"type":"checkout.session.completed"}')
+    expect(loaded!.bodyText).toBe('{"type":"checkout.session.completed"}')
+    expect(Buffer.from(loaded!.bodyRaw)).toEqual(
+      Buffer.from('{"type":"checkout.session.completed"}'),
+    )
+    expect(loaded!.bodyExact).toBe(true)
   })
 
   it('returns the headers as an object', () => {
@@ -104,6 +112,61 @@ describe('load', () => {
     const loaded = storage.load('evt_001')
 
     expect(loaded!.verification).toBeNull()
+  })
+
+  it('round-trips exact raw bytes for a non-UTF-8 payload', () => {
+    const bodyRaw = Uint8Array.from([0x66, 0x6f, 0x80, 0x6f])
+    storage.save(
+      makeEvent({
+        id: 'evt_bytes',
+        headers: { 'content-type': 'application/octet-stream' },
+        bodyRaw,
+        bodyText: null,
+        bodyExact: true,
+      }),
+    )
+
+    const loaded = storage.load('evt_bytes')
+
+    expect(loaded).not.toBeNull()
+    expect(Buffer.from(loaded!.bodyRaw)).toEqual(Buffer.from(bodyRaw))
+    expect(loaded!.bodyText).toBeNull()
+    expect(loaded!.bodyExact).toBe(true)
+  })
+
+  it('loads legacy text-only rows with bodyExact=false', () => {
+    storage.close()
+    const db = new DatabaseSync(dbPath)
+    db.exec(`
+      DROP TABLE IF EXISTS events;
+      CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        timestamp TEXT NOT NULL,
+        method TEXT NOT NULL,
+        path TEXT NOT NULL,
+        headers TEXT NOT NULL,
+        body TEXT NOT NULL
+      );
+    `)
+    db.prepare(
+      `INSERT INTO events (id, timestamp, method, path, headers, body) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(
+      'evt_legacy',
+      '2026-04-06T12:00:00.000Z',
+      'POST',
+      '/webhook',
+      JSON.stringify({ 'content-type': 'application/json' }),
+      '{"legacy":true}',
+    )
+    db.close()
+
+    storage = createStorage(dbPath)
+    const loaded = storage.load('evt_legacy')
+
+    expect(loaded).not.toBeNull()
+    expect(loaded!.bodyText).toBe('{"legacy":true}')
+    expect(Buffer.from(loaded!.bodyRaw)).toEqual(Buffer.from('{"legacy":true}'))
+    expect(loaded!.bodyExact).toBe(false)
   })
 })
 
@@ -150,6 +213,7 @@ describe('corruption', () => {
       path: '/webhook',
       headers: '{not json',
       body: '{}',
+      bodyRaw: Buffer.from('{}'),
     })
 
     expect(() => storage.load('evt_bad')).toThrow()
@@ -163,6 +227,7 @@ describe('corruption', () => {
       path: '/webhook',
       headers: JSON.stringify([1, 2, 3]),
       body: '{}',
+      bodyRaw: Buffer.from('{}'),
     })
 
     expect(() => storage.load('evt_bad_shape')).toThrow()
@@ -177,6 +242,7 @@ describe('corruption', () => {
       path: '/webhook',
       headers: '{not json',
       body: '{}',
+      bodyRaw: Buffer.from('{}'),
     })
 
     expect(() => storage.list()).toThrow()

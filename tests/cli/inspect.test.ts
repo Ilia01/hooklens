@@ -7,13 +7,16 @@ import type { WebhookEvent } from '../../src/types.js'
 import { fakeStorage, fakeTerminal } from '../helpers.js'
 
 function makeEvent(overrides: Partial<WebhookEvent> = {}): WebhookEvent {
+  const bodyText = '{"ok":true}'
   return {
     id: 'evt_test',
     timestamp: '2026-04-08T12:00:00.000Z',
     method: 'POST',
     path: '/webhook',
     headers: { 'content-type': 'application/json' },
-    body: '{"ok":true}',
+    bodyRaw: Buffer.from(bodyText, 'utf8'),
+    bodyText,
+    bodyExact: true,
     ...overrides,
   }
 }
@@ -82,7 +85,11 @@ describe('runInspect', () => {
     expect(terminal.printEventDetail).not.toHaveBeenCalled()
 
     const parsed = JSON.parse(stdout.written().trim())
-    expect(parsed).toEqual(event)
+    expect(parsed).toEqual({
+      ...event,
+      bodyRaw: Buffer.from(event.bodyRaw).toString('base64'),
+      body: event.bodyText,
+    })
     expect(storage.close).toHaveBeenCalledTimes(1)
   })
 
@@ -106,7 +113,30 @@ describe('runInspect', () => {
 
     const parsed = JSON.parse(stdout.written().trim())
     expect(parsed.verification).toEqual(verification)
+    expect(parsed.bodyRaw).toBe(Buffer.from(event.bodyRaw).toString('base64'))
+    expect(parsed.body).toBe(event.bodyText)
     expect(storage.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('emits binary-safe JSON when the stored body is not valid UTF-8', async () => {
+    const storage = fakeStorage()
+    const terminal = fakeTerminal()
+    const stdout = fakeStdout()
+    const event = makeEvent({
+      bodyRaw: Uint8Array.from([0x66, 0x6f, 0x80, 0x6f]),
+      bodyText: null,
+    })
+
+    storage.load.mockReturnValue(event)
+
+    vi.spyOn(storageModule, 'createStorage').mockReturnValue(storage as never)
+
+    await runInspect('evt_test', { json: true }, { terminal, stdout: stdout.stream })
+
+    const parsed = JSON.parse(stdout.written().trim())
+    expect(parsed.bodyRaw).toBe(Buffer.from(event.bodyRaw).toString('base64'))
+    expect(parsed.bodyText).toBeNull()
+    expect(parsed.body).toBeNull()
   })
 
   it('closes storage when load throws', async () => {

@@ -233,7 +233,7 @@ describe('createGitHubVerifier', () => {
     const header = await signPayload(SECRET, PAYLOAD)
 
     const result = verifier.verify({
-      body: PAYLOAD,
+      bodyRaw: Buffer.from(PAYLOAD, 'utf8'),
       headers: { 'X-Hub-Signature-256': header },
     })
 
@@ -245,7 +245,7 @@ describe('createGitHubVerifier', () => {
     const verifier = createGitHubVerifier({ secret: SECRET })
 
     const result = verifier.verify({
-      body: PAYLOAD,
+      bodyRaw: Buffer.from(PAYLOAD, 'utf8'),
       headers: {},
     })
 

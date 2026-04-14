@@ -87,3 +87,17 @@ hooklens listen \
 ```
 
 Forwarding lets HookLens verify and store the request before sending it on to your app.
+
+## Framework examples
+
+If you want a working route shape instead of starting from scratch, use the repo examples:
+
+- [Express + Stripe](https://github.com/Ilia01/hooklens/tree/main/examples/express-stripe)
+- [Fastify + Stripe](https://github.com/Ilia01/hooklens/tree/main/examples/fastify-stripe)
+- [Next.js App Router + Stripe](https://github.com/Ilia01/hooklens/tree/main/examples/nextjs-app-router-stripe)
+
+Each one shows the same rule:
+
+1. preserve the exact request body first
+2. verify the signature against that exact body
+3. parse JSON after verification succeeds
