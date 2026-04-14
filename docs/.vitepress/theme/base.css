@@ -1,0 +1,82 @@
+/* Navbar */
+
+.dark .VPNavBar,
+.dark .VPNavScreen {
+  background: rgba(6, 16, 21, 0.82);
+  backdrop-filter: blur(20px);
+}
+
+.VPNavBar .divider-line {
+  background-color: var(--vp-c-divider);
+}
+
+.VPNavBarTitle .title span {
+  font-family: var(--hooklens-font-display);
+  letter-spacing: -0.04em;
+}
+
+.VPNavBarMenuLink,
+.VPNavBarExtra a,
+.VPSocialLink {
+  transition:
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.VPButton {
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+/* Doc page typography */
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h4 {
+  font-family: var(--hooklens-font-display);
+  letter-spacing: -0.04em;
+}
+
+.vp-doc p,
+.vp-doc li {
+  color: var(--vp-c-text-2);
+  line-height: 1.78;
+}
+
+.vp-doc .custom-block.tip {
+  border-color: var(--vp-c-brand-1);
+}
+
+/* Inline code in doc pages */
+.vp-doc :not(pre) > code {
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.88em;
+}
+
+/* Keep command cells in docs tables readable on one line */
+.vp-doc table th:first-child,
+.vp-doc table td:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.vp-doc table :not(pre) > code {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Code blocks on doc pages */
+
+.dark .vp-doc div[class*='language-'] {
+  background: #0a1118;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+@media (max-width: 640px) {
+  .vp-doc div[class*='language-'] {
+    margin: 1.25rem 0;
+    width: auto;
+  }
+}

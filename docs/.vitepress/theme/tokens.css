@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --hooklens-home-max: 1080px;
+  --hooklens-font-display: 'Bricolage Grotesque', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --vp-font-family-base: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  /* Light mode brand */
+  --vp-c-brand-1: #0f766e;
+  --vp-c-brand-2: #0b5d57;
+  --vp-c-brand-3: #08443f;
+  --vp-c-brand-soft: rgba(15, 118, 110, 0.12);
+
+  --vp-c-bg: #f5f7f8;
+  --vp-c-bg-alt: #edf0f2;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: rgba(255, 255, 255, 0.82);
+
+  --vp-c-text-1: #112129;
+  --vp-c-text-2: rgba(17, 33, 41, 0.72);
+  --vp-c-text-3: rgba(17, 33, 41, 0.5);
+  --vp-c-divider: rgba(17, 33, 41, 0.1);
+  --vp-c-gutter: rgba(17, 33, 41, 0.06);
+
+  --vp-button-brand-border: #0f766e;
+  --vp-button-brand-text: #effaf8;
+  --vp-button-brand-bg: #0f766e;
+  --vp-button-brand-hover-border: #0b5d57;
+  --vp-button-brand-hover-text: #effaf8;
+  --vp-button-brand-hover-bg: #0b5d57;
+  --vp-button-brand-active-border: #08443f;
+  --vp-button-brand-active-text: #effaf8;
+  --vp-button-brand-active-bg: #08443f;
+
+  --vp-button-alt-border: rgba(17, 33, 41, 0.14);
+  --vp-button-alt-text: #112129;
+  --vp-button-alt-bg: rgba(255, 255, 255, 0.72);
+  --vp-button-alt-hover-border: rgba(17, 33, 41, 0.2);
+  --vp-button-alt-hover-text: #112129;
+  --vp-button-alt-hover-bg: rgba(255, 255, 255, 0.92);
+
+  --vp-home-hero-name-background: none;
+  --vp-home-hero-image-background-image: radial-gradient(
+    circle at 30% 22%,
+    rgba(15, 118, 110, 0.18),
+    transparent 42%
+  );
+  --vp-home-hero-image-filter: blur(60px);
+
+  --hooklens-terminal-bg: #0b1219;
+  --hooklens-terminal-border: rgba(15, 118, 110, 0.18);
+  --hooklens-terminal-chrome: #111a22;
+}
+
+.dark {
+  --vp-c-brand-1: #54e0d0;
+  --vp-c-brand-2: #31c7b7;
+  --vp-c-brand-3: #17897f;
+  --vp-c-brand-soft: rgba(84, 224, 208, 0.14);
+
+  --vp-c-bg: #061015;
+  --vp-c-bg-alt: #040b10;
+  --vp-c-bg-elv: #0b151c;
+  --vp-c-bg-soft: rgba(11, 21, 28, 0.9);
+
+  --vp-c-text-1: rgba(239, 247, 248, 0.96);
+  --vp-c-text-2: rgba(207, 224, 227, 0.72);
+  --vp-c-text-3: rgba(137, 164, 170, 0.76);
+  --vp-c-divider: rgba(148, 163, 184, 0.12);
+  --vp-c-gutter: rgba(148, 163, 184, 0.06);
+
+  --vp-button-brand-border: #17897f;
+  --vp-button-brand-text: #eff7f8;
+  --vp-button-brand-bg: #17897f;
+  --vp-button-brand-hover-border: #1ba194;
+  --vp-button-brand-hover-text: #eff7f8;
+  --vp-button-brand-hover-bg: #1ba194;
+  --vp-button-brand-active-border: #10655d;
+  --vp-button-brand-active-text: #eff7f8;
+  --vp-button-brand-active-bg: #10655d;
+
+  --vp-button-alt-border: rgba(148, 163, 184, 0.14);
+  --vp-button-alt-text: rgba(239, 247, 248, 0.96);
+  --vp-button-alt-bg: rgba(11, 21, 28, 0.68);
+  --vp-button-alt-hover-border: rgba(148, 163, 184, 0.2);
+  --vp-button-alt-hover-text: rgba(239, 247, 248, 0.96);
+  --vp-button-alt-hover-bg: rgba(15, 28, 38, 0.86);
+
+  --vp-home-hero-image-background-image:
+    radial-gradient(circle at 24% 24%, rgba(84, 224, 208, 0.18), transparent 40%),
+    radial-gradient(circle at 74% 18%, rgba(11, 165, 152, 0.1), transparent 34%);
+
+  --hooklens-terminal-bg: #080f15;
+  --hooklens-terminal-border: rgba(84, 224, 208, 0.12);
+  --hooklens-terminal-chrome: #0c1620;
+}
