@@ -137,6 +137,7 @@ describe('runInspect', () => {
     expect(parsed.bodyRaw).toBe(Buffer.from(event.bodyRaw).toString('base64'))
     expect(parsed.bodyText).toBeNull()
     expect(parsed.body).toBeNull()
+    expect(storage.close).toHaveBeenCalledTimes(1)
   })
 
   it('closes storage when load throws', async () => {
